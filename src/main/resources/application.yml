@@ -5,9 +5,9 @@ spring:
   application:
     name: movie-share
   datasource:
-    url: jdbc:postgresql://localhost:5433/movieshare
-    username: movieshare
-    password: movieshare
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -16,22 +16,11 @@ spring:
     enabled: true
   data:
     redis:
-      host: localhost
-      port: 6380
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
 
 movieshare:
   cors:
-    allowed-origin-patterns: "*"
+    allowed-origin-patterns: ${MOVIESHARE_CORS_ALLOWED_ORIGIN_PATTERNS:*}
   rate-limit:
-    room-create-per-hour: 20
-
----
-spring:
-  config.activate.on-profile: local-standard-ports
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/movieshare
-  data:
-    redis:
-      host: localhost
-      port: 6379
+    room-create-per-hour: ${MOVIESHARE_RATE_LIMIT_ROOM_CREATE:20}

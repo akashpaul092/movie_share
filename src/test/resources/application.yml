@@ -1,0 +1,11 @@
+# Test classpath overrides: integration tests use Testcontainers @ServiceConnection
+# to replace datasource and Redis; these values are placeholders only.
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/test_placeholder
+    username: test
+    password: test
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379

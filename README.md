@@ -10,35 +10,40 @@ Lightweight watch-party backend: friends join a room with a short code, share a 
 
 ## Quick start
 
-1. Start infra (mapped ports match default `application.yml`):
+1. **Secrets and local config** live in a root **`.env`** file (gitignored). Copy the template and edit values:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   [`docker-compose.yml`](docker-compose.yml) reads `.env` via `env_file` and uses `POSTGRES_*` plus the same Compose-time variables documented in [`.env.example`](.env.example).
+
+2. Start infra (host ports **5433** / **6380** match the default JDBC and Redis settings in `.env.example`):
 
    ```bash
    docker compose up -d
    ```
 
-2. Run the app:
+3. **Load `.env` into your shell** before running Spring. Docker Compose loads `.env` by itself; **`spring-boot:run` does not** read `.env` unless you export the variables (or configure them in your IDE). For bash/zsh:
 
    ```bash
+   set -a && source .env && set +a
    ./mvnw spring-boot:run
    ```
 
-3. Open the UI (default port **8081** unless you override):
+4. Open the UI (default port **8081** unless you set `SERVER_PORT`):
 
    ```text
    http://localhost:8081/
    ```
 
-To use standard local ports instead (Postgres `5432`, Redis `6379`), run with:
+If Postgres and Redis run on the usual local ports (`5432` / `6379`) instead of Docker’s mapped ports, set `SPRING_DATASOURCE_URL`, `SPRING_DATA_REDIS_HOST`, and `SPRING_DATA_REDIS_PORT` in `.env` accordingly.
 
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local-standard-ports
-```
-
-To accept connections from other devices on your LAN, add `address: 0.0.0.0` under `server:` in [`application.yml`](src/main/resources/application.yml) (Spring Boot’s default is often already all interfaces; use this if you only get `127.0.0.1`).
+To listen on all interfaces for LAN access, set **`SERVER_ADDRESS=0.0.0.0`** in `.env` and **export** it as in step 3 (Spring maps `SERVER_ADDRESS` to `server.address`).
 
 ### Configuration
 
-Main settings live in [`src/main/resources/application.yml`](src/main/resources/application.yml): datasource, Redis, CORS patterns, and `server.port` (`SERVER_PORT` env overrides).
+[`src/main/resources/application.yml`](src/main/resources/application.yml) wires **PostgreSQL**, **Redis**, CORS, and rate limits from **environment variables** (see [`.env.example`](.env.example)). No database passwords belong in git.
 
 ## Features
 
