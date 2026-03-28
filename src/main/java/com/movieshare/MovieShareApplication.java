@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MovieShareApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MovieShareApplication.class, args);
+		SpringApplication app = new SpringApplication(MovieShareApplication.class);
+		app.setDefaultProperties(DotEnvLoader.loadAsDefaultProperties());
+		app.run(args);
 	}
 
 }

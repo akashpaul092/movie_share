@@ -34,12 +34,7 @@ Lightweight watch-party backend: friends join a room with a short code, share a 
 
    Map a different host port with `APP_HOST_PORT` (default **8081**), e.g. `APP_HOST_PORT=9080 docker compose up -d --build`.
 
-3. If you chose **A**, **load `.env` into your shell** before running Spring. Docker Compose loads `.env` by itself; **`spring-boot:run` does not** read `.env` unless you export the variables (or configure them in your IDE). For bash/zsh:
-
-   ```bash
-   set -a && source .env && set +a
-   ./mvnw spring-boot:run
-   ```
+3. If you chose **A**, run `./mvnw spring-boot:run` from the project root: the app **loads a root `.env` file automatically** (via `DotEnvLoader`). You can still **`export`** variables or use IDE env if you prefer; OS environment **overrides** `.env` when both set. Docker Compose continues to read `.env` on its own.
 
 4. Open the UI (default mapped port **8081** unless you changed `APP_HOST_PORT` or `SERVER_PORT`):
 
