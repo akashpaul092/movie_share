@@ -55,6 +55,29 @@ To listen on all interfaces for LAN access, set **`SERVER_ADDRESS=0.0.0.0`** in 
 
 [`src/main/resources/application.yml`](src/main/resources/application.yml) wires **PostgreSQL**, **Redis**, CORS, and rate limits from **environment variables** (see [`.env.example`](.env.example)). No database passwords belong in git.
 
+### Deploying to Render (or any single-container host)
+
+`localhost:5433` only makes sense **on your laptop** when Postgres is exposed by Docker Compose. On **Render**, only your **web service** container runs; there is **no** Postgres on `localhost` inside that container.
+
+1. Create **PostgreSQL** and **Redis** (Render *Key Value* or external) in the Render dashboard.
+2. On your **Web Service**, set **Environment** variables (do **not** reuse `.env` meant for local Docker):
+
+   | Variable | Value |
+   |----------|--------|
+   | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://HOST:5432/DATABASE` using the Render Postgres **internal** hostname and database name from the dashboard. |
+   | `SPRING_DATASOURCE_USERNAME` | Postgres user from the dashboard. |
+   | `SPRING_DATASOURCE_PASSWORD` | Postgres password. |
+   | `SPRING_DATA_REDIS_HOST` | Redis host from your Redis provider. |
+   | `SPRING_DATA_REDIS_PORT` | Usually `6379` (or the port Render shows). |
+
+   Render sets **`PORT`**; the app is configured to use **`${PORT}`** first, so Tomcat binds correctly.
+
+3. If Redis requires a password, set **`SPRING_DATA_REDIS_PASSWORD`** (Spring Boot maps it to `spring.data.redis.password`).
+
+4. Optional: **`MOVIESHARE_CORS_ALLOWED_ORIGIN_PATTERNS`** = your frontend origin (e.g. `https://your-app.onrender.com`).
+
+**Why you saw `localhost:5433 refused`:** the service was still using a **local** JDBC URL. Point `SPRING_DATASOURCE_URL` at Render’s Postgres **hostname**, not `localhost`.
+
 ### Troubleshooting: `password authentication failed for user "movieshare"`
 
 1. **Same password in two places** — In `.env`, `SPRING_DATASOURCE_PASSWORD` must be **exactly** the same as `POSTGRES_PASSWORD` (Compose also passes `POSTGRES_PASSWORD` into the app container for Docker runs).

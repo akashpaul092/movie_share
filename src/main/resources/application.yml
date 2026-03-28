@@ -1,5 +1,6 @@
 server:
-  port: ${SERVER_PORT:8081}
+  # Render (and similar) set PORT; local dev can use SERVER_PORT or default 8081
+  port: ${PORT:${SERVER_PORT:8081}}
 
 spring:
   application:
