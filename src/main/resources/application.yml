@@ -1,0 +1,37 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: movie-share
+  datasource:
+    url: jdbc:postgresql://localhost:5433/movieshare
+    username: movieshare
+    password: movieshare
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6380
+
+movieshare:
+  cors:
+    allowed-origin-patterns: "*"
+  rate-limit:
+    room-create-per-hour: 20
+
+---
+spring:
+  config.activate.on-profile: local-standard-ports
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/movieshare
+  data:
+    redis:
+      host: localhost
+      port: 6379

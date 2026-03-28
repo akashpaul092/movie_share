@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Virtual Cinema Sync</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0e1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    header {
+      padding: 1.25rem clamp(1rem, 4vw, 2.5rem);
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    h1 { margin: 0; font-size: 1.25rem; font-weight: 650; letter-spacing: -0.02em; }
+    p.lead { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; }
+    main {
+      padding: clamp(1rem, 4vw, 2.5rem);
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    .grid { display: grid; gap: 1rem; }
+    @media (min-width: 800px) {
+      .grid.two { grid-template-columns: 1fr 1fr; }
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+    }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #21262d;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.5rem 0.85rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    button.primary {
+      background: var(--accent);
+      border-color: transparent;
+      color: #041019;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      background: #1f2933;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .badge.ok { color: #3fb950; border-color: #238636; }
+    .badge.host { color: #d29922; border-color: #9a6700; }
+    .badge.viewer { color: var(--muted); }
+    .player-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    #player { width: 100%; height: 100%; }
+    .theater-row {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+    @media (min-width: 900px) {
+      .theater-row {
+        grid-template-columns: 1fr minmax(260px, 300px);
+      }
+      .chat-panel { position: sticky; top: 0.75rem; }
+    }
+    .chat-panel h3 {
+      margin: 0 0 0.65rem;
+      font-size: 0.95rem;
+      font-weight: 650;
+    }
+    .chat-log {
+      min-height: 140px;
+      max-height: min(38vh, 300px);
+      overflow-y: auto;
+      font-size: 0.85rem;
+      padding: 0.5rem 0.6rem;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 0.65rem;
+    }
+    .chat-line {
+      margin-bottom: 0.4rem;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .chat-line:last-child { margin-bottom: 0; }
+    .chat-who {
+      color: var(--accent);
+      font-weight: 650;
+      margin-right: 0.25rem;
+    }
+    .hint { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+    .hidden { display: none !important; }
+    #status { font-size: 0.85rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Virtual Cinema Sync</h1>
+    <p class="lead">YouTube watch party — play, pause, and seek stay in sync via WebSockets.</p>
+  </header>
+  <main>
+    <section id="gate" class="grid two">
+      <div class="card">
+        <h2 style="margin:0 0 0.75rem;font-size:1rem;">Start a room</h2>
+        <label for="roomName">Optional name</label>
+        <input id="roomName" type="text" placeholder="Friday movie night" autocomplete="off" />
+        <div class="row" style="margin-top:0.75rem;">
+          <button type="button" class="primary" id="btnCreate">Create room</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 style="margin:0 0 0.75rem;font-size:1rem;">Join with code</h2>
+        <label for="joinCode">Room code</label>
+        <input id="joinCode" type="text" placeholder="e.g. ABC2XY7Z" autocomplete="off" />
+        <div class="row" style="margin-top:0.75rem;">
+          <button type="button" class="primary" id="btnJoin">Join</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="theater" class="grid hidden" style="margin-top:1rem;">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <span class="badge ok" id="roomLabel">ROOM</span>
+            <span class="badge host" id="roomRoleBadge">Host</span>
+            <span id="status">Disconnected</span>
+          </div>
+          <button type="button" id="btnLeave">Leave</button>
+        </div>
+        <label for="videoInput" style="margin-top:0.85rem;">YouTube video ID or URL</label>
+        <div class="row">
+          <input id="videoInput" type="text" placeholder="dQw4w9WgXcQ or full youtube URL" autocomplete="off" style="flex:1;min-width:200px;" />
+          <button type="button" class="primary" id="btnLoad">Load video</button>
+          <button type="button" id="btnSharePosition">Broadcast position</button>
+        </div>
+        <p class="hint" id="theaterHint">The host controls the video. Viewers follow synced playback automatically.</p>
+      </div>
+      <div class="theater-row">
+        <div class="player-wrap">
+          <div id="player"></div>
+        </div>
+        <aside class="card chat-panel">
+          <h3>Room chat</h3>
+          <div id="chatLog" class="chat-log" aria-live="polite"></div>
+          <label for="chatDisplayName">Your name</label>
+          <input id="chatDisplayName" type="text" placeholder="Guest" maxlength="40" autocomplete="nickname" />
+          <label for="chatInput" style="margin-top:0.5rem;">Message</label>
+          <div class="row" style="margin-top:0.35rem;">
+            <input id="chatInput" type="text" placeholder="Say something…" maxlength="500" autocomplete="off" style="flex:1;min-width:0;" />
+            <button type="button" class="primary" id="btnSendChat">Send</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    (function () {
+      const senderId = (crypto.randomUUID && crypto.randomUUID()) || ('user-' + Math.random().toString(36).slice(2));
+      let roomCode = null;
+      let stompClient = null;
+      let stompConnected = false;
+      let player = null;
+      let ignoreLocalUntil = 0;
+      let lastPolledTime = null;
+      let pollTimer = null;
+      const POLL_MS = 450;
+      const IGNORE_MS = 520;
+      let isAdmin = false;
+      let adminToken = null;
+      let pendingJoinState = null;
+
+      const $ = (id) => document.getElementById(id);
+      const gate = $('gate');
+      const theater = $('theater');
+
+      function setStatus(text) { $('status').textContent = text; }
+
+      function extractVideoId(raw) {
+        if (!raw) return null;
+        const s = raw.trim();
+        if (/^[\w-]{11}$/.test(s)) return s;
+        try {
+          const u = new URL(s);
+          if (u.hostname.includes('youtu.be')) {
+            const id = u.pathname.replace(/^\//, '').slice(0, 11);
+            return /^[\w-]{11}$/.test(id) ? id : null;
+          }
+          const v = u.searchParams.get('v');
+          return v && /^[\w-]{11}$/.test(v) ? v : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function nowTs() { return Date.now(); }
+
+      function sendSync(msg) {
+        if (!stompConnected || !roomCode || !isAdmin || !adminToken) return;
+        const body = Object.assign({
+          clientTimestamp: nowTs(),
+          senderId: senderId,
+          adminToken: adminToken
+        }, msg);
+        stompClient.send('/app/room/' + roomCode + '/sync', {}, JSON.stringify(body));
+      }
+
+      function updateHostUi() {
+        var host = isAdmin;
+        $('videoInput').disabled = !host;
+        $('btnLoad').disabled = !host;
+        $('btnSharePosition').disabled = !host;
+        $('roomRoleBadge').textContent = host ? 'Host' : 'Viewer';
+        $('roomRoleBadge').className = 'badge ' + (host ? 'host' : 'viewer');
+        $('theaterHint').textContent = host
+          ? 'You are the host — load video, play/pause, and broadcast position for everyone.'
+          : 'You are a viewer — playback follows the host. Chat is open to everyone.';
+      }
+
+      function getInitialVideoId() {
+        if (pendingJoinState && pendingJoinState.videoId) {
+          return pendingJoinState.videoId;
+        }
+        return extractVideoId($('videoInput').value) || 'dQw4w9WgXcQ';
+      }
+
+      function applyPendingJoinState() {
+        if (!pendingJoinState || !player || !pendingJoinState.videoId) {
+          pendingJoinState = null;
+          return;
+        }
+        var st = pendingJoinState;
+        pendingJoinState = null;
+        armIgnore();
+        var pos = typeof st.positionSec === 'number' ? st.positionSec : 0;
+        var shouldPlay = st.playing === true;
+        setTimeout(function () {
+          if (!player) return;
+          try {
+            player.seekTo(pos, true);
+            if (shouldPlay) player.playVideo();
+            else player.pauseVideo();
+          } catch (e) { /* ignore */ }
+        }, 450);
+      }
+
+      function onPlayerReady() {
+        applyPendingJoinState();
+      }
+
+      function armIgnore() {
+        ignoreLocalUntil = nowTs() + IGNORE_MS;
+        lastPolledTime = null;
+      }
+
+      function applyRemote(message) {
+        if (!player || !message || !message.type) return;
+        armIgnore();
+        const vid = message.videoId;
+        if (message.type === 'VIDEO_CHANGE' && vid) {
+          player.loadVideoById(vid);
+          if (typeof message.positionSec === 'number') {
+            player.seekTo(message.positionSec, true);
+          }
+          return;
+        }
+        if (vid && player.getVideoData && player.getVideoData().video_id !== vid) {
+          player.loadVideoById(vid);
+        }
+        if (typeof message.positionSec === 'number') {
+          player.seekTo(message.positionSec, true);
+        }
+        if (message.type === 'PLAY') player.playVideo();
+        if (message.type === 'PAUSE') player.pauseVideo();
+        if (message.type === 'SEEK' && typeof message.positionSec === 'number') {
+          player.seekTo(message.positionSec, true);
+        }
+      }
+
+      function appendChatLine(msg) {
+        if (!msg || !msg.text) return;
+        const line = document.createElement('div');
+        line.className = 'chat-line';
+        const who = document.createElement('span');
+        who.className = 'chat-who';
+        var label = (msg.displayName && String(msg.displayName).trim()) || (msg.senderId ? String(msg.senderId).slice(0, 8) : '?');
+        who.textContent = label + ':';
+        const txt = document.createElement('span');
+        txt.textContent = ' ' + msg.text;
+        line.appendChild(who);
+        line.appendChild(txt);
+        const log = $('chatLog');
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function sendChat() {
+        if (!stompConnected || !roomCode) return;
+        var text = $('chatInput').value.trim();
+        if (!text) return;
+        var displayName = ($('chatDisplayName').value || '').trim() || 'Guest';
+        var body = JSON.stringify({
+          text: text,
+          senderId: senderId,
+          clientTimestamp: nowTs(),
+          displayName: displayName
+        });
+        stompClient.send('/app/room/' + roomCode + '/chat', {}, body);
+        $('chatInput').value = '';
+      }
+
+      function connectStomp() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+        stompClient.connect({}, function () {
+          stompConnected = true;
+          setStatus('Connected — syncing');
+          stompClient.subscribe('/topic/room.' + roomCode, function (evt) {
+            const data = JSON.parse(evt.body);
+            if (data.senderId === senderId) return;
+            applyRemote(data);
+          });
+          stompClient.subscribe('/topic/room.' + roomCode + '.chat', function (evt) {
+            try {
+              appendChatLine(JSON.parse(evt.body));
+            } catch (err) { /* ignore */ }
+          });
+        }, function () {
+          stompConnected = false;
+          setStatus('Disconnected — refresh if this persists');
+        });
+      }
+
+      function enterRoom(code, options) {
+        options = options || {};
+        roomCode = code;
+        adminToken = options.adminToken || null;
+        isAdmin = !!adminToken;
+        if (adminToken) {
+          try {
+            sessionStorage.setItem('movieshare_admin_' + code, adminToken);
+          } catch (e) { /* ignore */ }
+        }
+        pendingJoinState = options.joinState || null;
+        gate.classList.add('hidden');
+        theater.classList.remove('hidden');
+        $('roomLabel').textContent = 'ROOM ' + roomCode;
+        $('chatLog').innerHTML = '';
+        $('chatInput').value = '';
+        updateHostUi();
+        connectStomp();
+        if (window.YT && window.YT.Player) {
+          ensurePlayer();
+        }
+      }
+
+      function leaveRoom() {
+        if (roomCode) {
+          try {
+            sessionStorage.removeItem('movieshare_admin_' + roomCode);
+          } catch (e) { /* ignore */ }
+        }
+        theater.classList.add('hidden');
+        gate.classList.remove('hidden');
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = null;
+        if (player && typeof player.destroy === 'function') {
+          try {
+            player.destroy();
+          } catch (e) { /* ignore */ }
+        }
+        player = null;
+        var wrap = document.querySelector('.player-wrap');
+        if (wrap) wrap.innerHTML = '<div id="player"></div>';
+        if (stompClient && stompConnected) {
+          stompClient.disconnect();
+        }
+        stompClient = null;
+        stompConnected = false;
+        roomCode = null;
+        lastPolledTime = null;
+        isAdmin = false;
+        adminToken = null;
+        pendingJoinState = null;
+        $('chatLog').innerHTML = '';
+        $('chatInput').value = '';
+      }
+
+      function ensurePlayer() {
+        if (player) return;
+        var vid = getInitialVideoId();
+        if (pendingJoinState && pendingJoinState.videoId) {
+          $('videoInput').value = pendingJoinState.videoId;
+        }
+        player = new YT.Player('player', {
+          height: '100%',
+          width: '100%',
+          videoId: vid,
+          playerVars: {
+            rel: 0,
+            modestbranding: 1,
+            controls: isAdmin ? 1 : 0,
+            disablekb: isAdmin ? 0 : 1
+          },
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange
+          }
+        });
+        pollTimer = setInterval(pollTimeJump, POLL_MS);
+      }
+
+      function onPlayerStateChange(event) {
+        if (nowTs() < ignoreLocalUntil) return;
+        if (!roomCode || !stompConnected || !player) return;
+        const vid = player.getVideoData().video_id;
+        const t = player.getCurrentTime();
+        if (event.data === YT.PlayerState.PLAYING) {
+          sendSync({ type: 'PLAY', videoId: vid, positionSec: t });
+        } else if (event.data === YT.PlayerState.PAUSED) {
+          sendSync({ type: 'PAUSE', videoId: vid, positionSec: t });
+        }
+      }
+
+      function pollTimeJump() {
+        if (!player || nowTs() < ignoreLocalUntil || !roomCode || !stompConnected) return;
+        if (typeof player.getCurrentTime !== 'function') return;
+        const t = player.getCurrentTime();
+        if (lastPolledTime != null && Math.abs(t - lastPolledTime) > 1.35) {
+          const vid = player.getVideoData().video_id;
+          sendSync({ type: 'SEEK', videoId: vid, positionSec: t });
+        }
+        lastPolledTime = t;
+      }
+
+      async function api(path, opts) {
+        const res = await fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts));
+        return res;
+      }
+
+      $('btnCreate').onclick = async function () {
+        const name = $('roomName').value || null;
+        const res = await api('/api/rooms', {
+          method: 'POST',
+          body: JSON.stringify({ name: name })
+        });
+        if (res.status === 429) {
+          alert('Too many rooms created from this network. Try again later.');
+          return;
+        }
+        if (!res.ok) {
+          alert('Could not create room');
+          return;
+        }
+        const data = await res.json();
+        if (!data.adminToken) {
+          alert('Could not create room (missing host token)');
+          return;
+        }
+        enterRoom(data.roomCode, { adminToken: data.adminToken, joinState: null });
+      };
+
+      $('btnJoin').onclick = async function () {
+        const raw = $('joinCode').value;
+        const code = raw.trim().toUpperCase();
+        if (!code) {
+          alert('Enter a room code');
+          return;
+        }
+        const res = await api('/api/rooms/' + encodeURIComponent(code));
+        if (res.status === 404) {
+          alert('Room not found');
+          return;
+        }
+        if (!res.ok) {
+          alert('Could not join');
+          return;
+        }
+        const payload = await res.json();
+        if (payload.state && payload.state.videoId) {
+          $('videoInput').value = payload.state.videoId;
+        }
+        var stored = null;
+        try {
+          stored = sessionStorage.getItem('movieshare_admin_' + code);
+        } catch (e) { /* ignore */ }
+        enterRoom(code, {
+          adminToken: stored || null,
+          joinState: payload.state || null
+        });
+      };
+
+      $('btnLeave').onclick = leaveRoom;
+
+      $('btnSendChat').onclick = sendChat;
+      $('chatInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendChat();
+        }
+      });
+
+      $('btnLoad').onclick = function () {
+        if (!isAdmin) return;
+        const id = extractVideoId($('videoInput').value);
+        if (!id) {
+          alert('Paste a valid YouTube URL or 11-character video ID');
+          return;
+        }
+        if (!player) ensurePlayer();
+        else player.loadVideoById(id);
+        armIgnore();
+        sendSync({ type: 'VIDEO_CHANGE', videoId: id, positionSec: 0 });
+      };
+
+      $('btnSharePosition').onclick = function () {
+        if (!isAdmin || !player || !roomCode) return;
+        const vid = player.getVideoData().video_id;
+        const t = player.getCurrentTime();
+        sendSync({ type: 'SEEK', videoId: vid, positionSec: t });
+      };
+
+      window.onYouTubeIframeAPIReady = function () {
+        if (roomCode) ensurePlayer();
+      };
+    })();
+  </script>
+</body>
+</html>
