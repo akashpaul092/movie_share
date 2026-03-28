@@ -18,20 +18,30 @@ Lightweight watch-party backend: friends join a room with a short code, share a 
 
    [`docker-compose.yml`](docker-compose.yml) reads `.env` via `env_file` and uses `POSTGRES_*` plus the same Compose-time variables documented in [`.env.example`](.env.example).
 
-2. Start infra (host ports **5433** / **6380** match the default JDBC and Redis settings in `.env.example`):
+2. Choose how you run the app:
+
+   **A — Spring Boot on your machine, only Postgres + Redis in Docker** (host ports **5433** / **6380** match `.env.example`):
 
    ```bash
-   docker compose up -d
+   docker compose up -d postgres redis
    ```
 
-3. **Load `.env` into your shell** before running Spring. Docker Compose loads `.env` by itself; **`spring-boot:run` does not** read `.env` unless you export the variables (or configure them in your IDE). For bash/zsh:
+   **B — Full stack in Docker** (API + UI + DB + Redis). Compose sets JDBC/Redis hosts to the internal service names (`postgres`, `redis`) so you do not need to change `.env` for that:
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+   Map a different host port with `APP_HOST_PORT` (default **8081**), e.g. `APP_HOST_PORT=9080 docker compose up -d --build`.
+
+3. If you chose **A**, **load `.env` into your shell** before running Spring. Docker Compose loads `.env` by itself; **`spring-boot:run` does not** read `.env` unless you export the variables (or configure them in your IDE). For bash/zsh:
 
    ```bash
    set -a && source .env && set +a
    ./mvnw spring-boot:run
    ```
 
-4. Open the UI (default port **8081** unless you set `SERVER_PORT`):
+4. Open the UI (default mapped port **8081** unless you changed `APP_HOST_PORT` or `SERVER_PORT`):
 
    ```text
    http://localhost:8081/
@@ -39,11 +49,24 @@ Lightweight watch-party backend: friends join a room with a short code, share a 
 
 If Postgres and Redis run on the usual local ports (`5432` / `6379`) instead of Docker’s mapped ports, set `SPRING_DATASOURCE_URL`, `SPRING_DATA_REDIS_HOST`, and `SPRING_DATA_REDIS_PORT` in `.env` accordingly.
 
-To listen on all interfaces for LAN access, set **`SERVER_ADDRESS=0.0.0.0`** in `.env` and **export** it as in step 3 (Spring maps `SERVER_ADDRESS` to `server.address`).
+To listen on all interfaces for LAN access, set **`SERVER_ADDRESS=0.0.0.0`** in `.env` and **export** it when running locally (**A**), or add under the `app` service in [`docker-compose.yml`](docker-compose.yml): `environment: SERVER_ADDRESS: "0.0.0.0"` (Spring maps `SERVER_ADDRESS` to `server.address`).
 
 ### Configuration
 
 [`src/main/resources/application.yml`](src/main/resources/application.yml) wires **PostgreSQL**, **Redis**, CORS, and rate limits from **environment variables** (see [`.env.example`](.env.example)). No database passwords belong in git.
+
+### Troubleshooting: `password authentication failed for user "movieshare"`
+
+1. **Same password in two places** — In `.env`, `SPRING_DATASOURCE_PASSWORD` must be **exactly** the same as `POSTGRES_PASSWORD` (Compose also passes `POSTGRES_PASSWORD` into the app container for Docker runs).
+
+2. **Old Docker volume** — Postgres sets the user password only when the `pg_data` volume is **first** initialized. If you changed `.env` after the database was created, the running Postgres still has the **old** password. Either:
+   - Put the **old** password back in `.env`, or  
+   - Reset the volume (deletes all room data) and start clean:
+
+     ```bash
+     docker compose down -v
+     docker compose up -d postgres redis   # or full stack with --build
+     ```
 
 ## Features
 
