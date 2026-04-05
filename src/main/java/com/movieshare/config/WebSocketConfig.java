@@ -42,7 +42,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
-		registry.setMessageSizeLimit(16 * 1024);
+		// WebRTC SDP offers/answers can exceed 16 KB
+		registry.setMessageSizeLimit(64 * 1024);
 	}
 
 }

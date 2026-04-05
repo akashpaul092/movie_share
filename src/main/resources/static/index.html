@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Virtual Cinema Sync</title>
+  <title>Movie Share — Watch party &amp; video</title>
   <style>
     :root {
       color-scheme: dark;
@@ -138,12 +138,82 @@
     .hint { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
     .hidden { display: none !important; }
     #status { font-size: 0.85rem; color: var(--muted); }
+    .service-tabs {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .service-tab {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #21262d;
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 0.45rem 0.9rem;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .service-tab.active {
+      background: var(--accent);
+      color: #041019;
+      border-color: transparent;
+    }
+    .video-call-layout {
+      display: grid;
+      gap: 1rem;
+    }
+    @media (min-width: 700px) {
+      .video-call-layout { grid-template-columns: minmax(240px, 300px) 1fr; }
+    }
+    .local-preview {
+      width: 100%;
+      border-radius: 10px;
+      background: #000;
+      aspect-ratio: 4 / 3;
+      max-height: 240px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+    .remote-grid {
+      display: grid;
+      gap: 0.65rem;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    .remote-tile {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    .remote-tile video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .remote-label {
+      position: absolute;
+      left: 0.35rem;
+      bottom: 0.35rem;
+      font-size: 0.7rem;
+      color: #fff;
+      text-shadow: 0 1px 2px #000;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>Virtual Cinema Sync</h1>
-    <p class="lead">YouTube watch party — play, pause, and seek stay in sync via WebSockets.</p>
+    <h1>Movie Share</h1>
+    <p class="lead">Two modes in one room: <strong>Watch party</strong> (YouTube sync) and <strong>Video &amp; screen</strong> (WebRTC). Create or join a room, then pick a tab.</p>
   </header>
   <main>
     <section id="gate" class="grid two">
@@ -175,29 +245,64 @@
           </div>
           <button type="button" id="btnLeave">Leave</button>
         </div>
-        <label for="videoInput" style="margin-top:0.85rem;">YouTube video ID or URL</label>
-        <div class="row">
-          <input id="videoInput" type="text" placeholder="dQw4w9WgXcQ or full youtube URL" autocomplete="off" style="flex:1;min-width:200px;" />
-          <button type="button" class="primary" id="btnLoad">Load video</button>
-          <button type="button" id="btnSharePosition">Broadcast position</button>
+        <div class="service-tabs" role="tablist" aria-label="Room services">
+          <button type="button" class="service-tab active" id="tabWatchParty" role="tab" aria-selected="true">Watch party</button>
+          <button type="button" class="service-tab" id="tabVideoCall" role="tab" aria-selected="false">Video &amp; screen</button>
         </div>
-        <p class="hint" id="theaterHint">The host controls the video. Viewers follow synced playback automatically.</p>
       </div>
-      <div class="theater-row">
-        <div class="player-wrap">
-          <div id="player"></div>
-        </div>
-        <aside class="card chat-panel">
-          <h3>Room chat</h3>
-          <div id="chatLog" class="chat-log" aria-live="polite"></div>
-          <label for="chatDisplayName">Your name</label>
-          <input id="chatDisplayName" type="text" placeholder="Guest" maxlength="40" autocomplete="nickname" />
-          <label for="chatInput" style="margin-top:0.5rem;">Message</label>
-          <div class="row" style="margin-top:0.35rem;">
-            <input id="chatInput" type="text" placeholder="Say something…" maxlength="500" autocomplete="off" style="flex:1;min-width:0;" />
-            <button type="button" class="primary" id="btnSendChat">Send</button>
+
+      <div id="pane-watch">
+        <div class="card">
+          <label for="videoInput" style="margin-top:0;">YouTube video ID or URL</label>
+          <div class="row">
+            <input id="videoInput" type="text" placeholder="dQw4w9WgXcQ or full youtube URL" autocomplete="off" style="flex:1;min-width:200px;" />
+            <button type="button" class="primary" id="btnLoad">Load video</button>
+            <button type="button" id="btnSharePosition">Broadcast position</button>
           </div>
-        </aside>
+          <p class="hint" id="theaterHint">The host controls the video. Viewers follow synced playback automatically.</p>
+        </div>
+        <div class="theater-row">
+          <div class="player-wrap">
+            <div id="player"></div>
+          </div>
+          <aside class="card chat-panel">
+            <h3>Room chat</h3>
+            <div id="chatLog" class="chat-log" aria-live="polite"></div>
+            <label for="chatDisplayName">Your name</label>
+            <input id="chatDisplayName" type="text" placeholder="Guest" maxlength="40" autocomplete="nickname" />
+            <label for="chatInput" style="margin-top:0.5rem;">Message</label>
+            <div class="row" style="margin-top:0.35rem;">
+              <input id="chatInput" type="text" placeholder="Say something…" maxlength="500" autocomplete="off" style="flex:1;min-width:0;" />
+              <button type="button" class="primary" id="btnSendChat">Send</button>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <div id="pane-video" class="hidden">
+        <div class="card">
+          <h2 style="margin:0 0 0.5rem;font-size:1rem;">Video call &amp; screen share</h2>
+          <p class="hint" style="margin:0;">Peer-to-peer (WebRTC). <strong>Browsers only allow camera/mic on HTTPS</strong> or on <code>http://localhost</code> / <code>127.0.0.1</code>. If you opened <code>http://192.168.x.x:8081</code> or <code>http://0.0.0.0:8081</code>, use <strong>HTTPS</strong> (reverse proxy + certificate) or test video from this machine via <code>http://localhost:8081</code>. Also use your real LAN IP in the URL bar, not <code>0.0.0.0</code> (that address is only for binding the server).</p>
+          <div class="video-call-layout" style="margin-top:1rem;">
+            <div>
+              <label for="localVideo">You (local)</label>
+              <video id="localVideo" class="local-preview" autoplay muted playsinline></video>
+              <div class="row" style="margin-top:0.65rem;">
+                <button type="button" class="primary" id="btnStartCamera">Start camera &amp; mic</button>
+                <button type="button" id="btnStopCamera" disabled>Stop camera</button>
+              </div>
+              <div class="row" style="margin-top:0.5rem;">
+                <button type="button" id="btnShareScreen" disabled>Share screen</button>
+                <button type="button" id="btnStopShare" disabled>Stop screen share</button>
+              </div>
+              <p class="hint" id="webrtcStatus">Camera off</p>
+            </div>
+            <div>
+              <span class="hint" style="display:block;margin-bottom:0.35rem;">Remote participants</span>
+              <div id="remoteVideos" class="remote-grid" role="group" aria-label="Remote videos"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -220,6 +325,13 @@
       let isAdmin = false;
       let adminToken = null;
       let pendingJoinState = null;
+
+      const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+      const activeVideoPeers = new Set();
+      const peers = new Map();
+      let localStream = null;
+      let screenStream = null;
+      let cameraVideoTrack = null;
 
       const $ = (id) => document.getElementById(id);
       const gate = $('gate');
@@ -360,6 +472,242 @@
         $('chatInput').value = '';
       }
 
+      function sendWebRtc(payload) {
+        if (!stompConnected || !roomCode) return;
+        stompClient.send('/app/room/' + roomCode + '/webrtc', {}, JSON.stringify(Object.assign({ from: senderId }, payload)));
+      }
+
+      function switchServiceTab(which) {
+        const watch = $('pane-watch');
+        const videoPane = $('pane-video');
+        const tw = $('tabWatchParty');
+        const tv = $('tabVideoCall');
+        if (!watch || !videoPane || !tw || !tv) return;
+        if (which === 'watch') {
+          watch.classList.remove('hidden');
+          videoPane.classList.add('hidden');
+          tw.classList.add('active');
+          tw.setAttribute('aria-selected', 'true');
+          tv.classList.remove('active');
+          tv.setAttribute('aria-selected', 'false');
+        } else {
+          watch.classList.add('hidden');
+          videoPane.classList.remove('hidden');
+          tv.classList.add('active');
+          tv.setAttribute('aria-selected', 'true');
+          tw.classList.remove('active');
+          tw.setAttribute('aria-selected', 'false');
+        }
+      }
+
+      function ensureRemoteTile(peerId) {
+        const grid = $('remoteVideos');
+        var el = document.getElementById('remote-wrap-' + peerId);
+        if (el) return el.querySelector('video');
+        el = document.createElement('div');
+        el.className = 'remote-tile';
+        el.id = 'remote-wrap-' + peerId;
+        var v = document.createElement('video');
+        v.id = 'remote-video-' + peerId;
+        v.autoplay = true;
+        v.playsInline = true;
+        v.setAttribute('playsinline', '');
+        var lab = document.createElement('div');
+        lab.className = 'remote-label';
+        lab.textContent = peerId.slice(0, 14);
+        el.appendChild(v);
+        el.appendChild(lab);
+        grid.appendChild(el);
+        return v;
+      }
+
+      function removePeer(peerId) {
+        activeVideoPeers.delete(peerId);
+        var pc = peers.get(peerId);
+        if (pc) {
+          try { pc.close(); } catch (e) { /* ignore */ }
+          peers.delete(peerId);
+        }
+        var wrap = document.getElementById('remote-wrap-' + peerId);
+        if (wrap) wrap.remove();
+      }
+
+      function teardownWebRtc() {
+        if (localStream && roomCode && stompConnected) {
+          sendWebRtc({ type: 'left-video' });
+        }
+        activeVideoPeers.clear();
+        peers.forEach(function (pc) {
+          try { pc.close(); } catch (e) { /* ignore */ }
+        });
+        peers.clear();
+        if (localStream) {
+          localStream.getTracks().forEach(function (t) { t.stop(); });
+          localStream = null;
+        }
+        if (screenStream) {
+          screenStream.getTracks().forEach(function (t) { t.stop(); });
+          screenStream = null;
+        }
+        cameraVideoTrack = null;
+        var lv = $('localVideo');
+        if (lv) lv.srcObject = null;
+        var rv = $('remoteVideos');
+        if (rv) rv.innerHTML = '';
+        if ($('btnStartCamera')) $('btnStartCamera').disabled = false;
+        if ($('btnStopCamera')) $('btnStopCamera').disabled = true;
+        if ($('btnShareScreen')) $('btnShareScreen').disabled = true;
+        if ($('btnStopShare')) $('btnStopShare').disabled = true;
+        if ($('webrtcStatus')) $('webrtcStatus').textContent = 'Camera off';
+      }
+
+      function videoSender(pc) {
+        var senders = pc.getSenders();
+        for (var i = 0; i < senders.length; i++) {
+          if (senders[i].track && senders[i].track.kind === 'video') return senders[i];
+        }
+        return null;
+      }
+
+      function createPeerConnection(peerId) {
+        if (peers.has(peerId)) return peers.get(peerId);
+        var pc = new RTCPeerConnection(rtcConfig);
+        peers.set(peerId, pc);
+        if (localStream) {
+          localStream.getTracks().forEach(function (track) {
+            pc.addTrack(track, localStream);
+          });
+        }
+        pc.ontrack = function (ev) {
+          var vid = ensureRemoteTile(peerId);
+          if (ev.streams && ev.streams[0]) vid.srcObject = ev.streams[0];
+        };
+        pc.onicecandidate = function (ev) {
+          if (ev.candidate) {
+            sendWebRtc({ type: 'ice', to: peerId, candidate: JSON.stringify(ev.candidate.toJSON()) });
+          }
+        };
+        return pc;
+      }
+
+      async function tryConnectToPeer(peerId) {
+        if (peerId === senderId) return;
+        if (!localStream) return;
+        if (peers.has(peerId)) return;
+        if (senderId > peerId) return;
+        var pc = createPeerConnection(peerId);
+        try {
+          var offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          sendWebRtc({ type: 'offer', to: peerId, sdp: offer.sdp, sdpType: 'offer' });
+        } catch (e) {
+          console.warn('WebRTC offer failed', e);
+        }
+      }
+
+      async function handleRemoteOffer(msg) {
+        var peerId = msg.from;
+        if (peerId === senderId) return;
+        var pc = peers.get(peerId);
+        if (!pc) pc = createPeerConnection(peerId);
+        try {
+          await pc.setRemoteDescription({ type: msg.sdpType || 'offer', sdp: msg.sdp });
+          var answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          sendWebRtc({ type: 'answer', to: peerId, sdp: answer.sdp, sdpType: 'answer' });
+        } catch (e) {
+          console.warn('WebRTC answer failed', e);
+        }
+      }
+
+      async function handleRemoteAnswer(msg) {
+        var peerId = msg.from;
+        var pc = peers.get(peerId);
+        if (!pc) return;
+        try {
+          await pc.setRemoteDescription({ type: msg.sdpType || 'answer', sdp: msg.sdp });
+        } catch (e) {
+          console.warn('WebRTC setRemoteDescription (answer) failed', e);
+        }
+      }
+
+      async function handleRemoteIce(msg) {
+        var peerId = msg.from;
+        var pc = peers.get(peerId);
+        if (!pc || !msg.candidate) return;
+        try {
+          await pc.addIceCandidate(JSON.parse(msg.candidate));
+        } catch (e) { /* ignore */ }
+      }
+
+      function handleRtcSignal(msg) {
+        if (!msg || msg.from === senderId) return;
+        if (msg.to && msg.to !== senderId) return;
+        switch (msg.type) {
+          case 'joined-video':
+            activeVideoPeers.add(msg.from);
+            if (localStream) tryConnectToPeer(msg.from);
+            break;
+          case 'left-video':
+            removePeer(msg.from);
+            break;
+          case 'offer':
+            handleRemoteOffer(msg);
+            break;
+          case 'answer':
+            handleRemoteAnswer(msg);
+            break;
+          case 'ice':
+            handleRemoteIce(msg);
+            break;
+          default:
+            break;
+        }
+      }
+
+      async function startScreenShare() {
+        if (!localStream) return;
+        if (!window.isSecureContext) {
+          alert('Screen sharing needs HTTPS or http://localhost (same rules as camera).');
+          return;
+        }
+        try {
+          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        } catch (e) {
+          alert('Screen share was cancelled or blocked.');
+          return;
+        }
+        var screenVideo = screenStream.getVideoTracks()[0];
+        if (!cameraVideoTrack && localStream.getVideoTracks()[0]) {
+          cameraVideoTrack = localStream.getVideoTracks()[0];
+        }
+        screenVideo.onended = function () { stopScreenShare(); };
+        peers.forEach(function (pc) {
+          var vs = videoSender(pc);
+          if (vs) vs.replaceTrack(screenVideo);
+        });
+        $('btnShareScreen').disabled = true;
+        $('btnStopShare').disabled = false;
+        $('webrtcStatus').textContent = 'Sharing screen';
+      }
+
+      function stopScreenShare() {
+        if (screenStream) {
+          screenStream.getTracks().forEach(function (t) { t.stop(); });
+          screenStream = null;
+        }
+        var cam = cameraVideoTrack;
+        if (cam && cam.readyState === 'live') {
+          peers.forEach(function (pc) {
+            var vs = videoSender(pc);
+            if (vs) vs.replaceTrack(cam);
+          });
+        }
+        $('btnShareScreen').disabled = !localStream;
+        $('btnStopShare').disabled = true;
+        $('webrtcStatus').textContent = localStream ? 'Camera on' : 'Camera off';
+      }
+
       function connectStomp() {
         const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
@@ -375,6 +723,11 @@
           stompClient.subscribe('/topic/room.' + roomCode + '.chat', function (evt) {
             try {
               appendChatLine(JSON.parse(evt.body));
+            } catch (err) { /* ignore */ }
+          });
+          stompClient.subscribe('/topic/room.' + roomCode + '.webrtc', function (evt) {
+            try {
+              handleRtcSignal(JSON.parse(evt.body));
             } catch (err) { /* ignore */ }
           });
         }, function () {
@@ -400,6 +753,7 @@
         $('chatLog').innerHTML = '';
         $('chatInput').value = '';
         updateHostUi();
+        switchServiceTab('watch');
         connectStomp();
         if (window.YT && window.YT.Player) {
           ensurePlayer();
@@ -407,6 +761,7 @@
       }
 
       function leaveRoom() {
+        teardownWebRtc();
         if (roomCode) {
           try {
             sessionStorage.removeItem('movieshare_admin_' + roomCode);
@@ -571,6 +926,53 @@
         const t = player.getCurrentTime();
         sendSync({ type: 'SEEK', videoId: vid, positionSec: t });
       };
+
+      $('tabWatchParty').onclick = function () { switchServiceTab('watch'); };
+      $('tabVideoCall').onclick = function () { switchServiceTab('video'); };
+
+      $('btnStartCamera').onclick = async function () {
+        if (!roomCode || !stompConnected) {
+          alert('Join a room first');
+          return;
+        }
+        if (!window.isSecureContext) {
+          alert(
+            'Camera and mic require a secure context.\n\n' +
+            '• Use https://your-server (with a TLS certificate), or\n' +
+            '• On this computer only: http://localhost:8081 (not http://YOUR_LAN-IP).\n\n' +
+            'http://0.0.0.0 or a LAN IP over plain HTTP is blocked by the browser.'
+          );
+          return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          alert('Camera API is not available. Try HTTPS, localhost, or another browser.');
+          return;
+        }
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (e) {
+          alert('Could not access camera/mic. Allow permission and use HTTPS if not on localhost.');
+          return;
+        }
+        cameraVideoTrack = localStream.getVideoTracks()[0] || null;
+        $('localVideo').srcObject = localStream;
+        $('btnStartCamera').disabled = true;
+        $('btnStopCamera').disabled = false;
+        $('btnShareScreen').disabled = false;
+        $('webrtcStatus').textContent = 'Camera on — finding peers…';
+        sendWebRtc({ type: 'joined-video' });
+        activeVideoPeers.forEach(function (pid) {
+          if (pid !== senderId) tryConnectToPeer(pid);
+        });
+      };
+
+      $('btnStopCamera').onclick = function () {
+        stopScreenShare();
+        teardownWebRtc();
+      };
+
+      $('btnShareScreen').onclick = function () { startScreenShare(); };
+      $('btnStopShare').onclick = function () { stopScreenShare(); };
 
       window.onYouTubeIframeAPIReady = function () {
         if (roomCode) ensurePlayer();

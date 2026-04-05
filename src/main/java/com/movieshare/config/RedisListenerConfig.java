@@ -8,6 +8,7 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 import com.movieshare.chat.ChatMessageRelay;
 import com.movieshare.sync.RoomMessageRelay;
+import com.movieshare.webrtc.WebRtcSignalingRelay;
 
 @Configuration
 public class RedisListenerConfig {
@@ -16,12 +17,14 @@ public class RedisListenerConfig {
 	RedisMessageListenerContainer redisMessageListenerContainer(
 			RedisConnectionFactory connectionFactory,
 			RoomMessageRelay roomMessageRelay,
-			ChatMessageRelay chatMessageRelay
+			ChatMessageRelay chatMessageRelay,
+			WebRtcSignalingRelay webRtcSignalingRelay
 	) {
 		RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
 		container.addMessageListener(roomMessageRelay, new PatternTopic("room:*"));
 		container.addMessageListener(chatMessageRelay, new PatternTopic("roomchat:*"));
+		container.addMessageListener(webRtcSignalingRelay, new PatternTopic("roomwebrtc:*"));
 		return container;
 	}
 
