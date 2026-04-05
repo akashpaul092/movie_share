@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -27,15 +29,20 @@ public class Room {
 	@Column(name = "admin_secret", nullable = false, length = 64)
 	private String adminSecret;
 
+	@Column(name = "room_kind", nullable = false, length = 32)
+	@Enumerated(EnumType.STRING)
+	private RoomKind kind;
+
 	protected Room() {
 	}
 
-	public Room(UUID id, String code, Instant createdAt, String name, String adminSecret) {
+	public Room(UUID id, String code, Instant createdAt, String name, String adminSecret, RoomKind kind) {
 		this.id = id;
 		this.code = code;
 		this.createdAt = createdAt;
 		this.name = name;
 		this.adminSecret = adminSecret;
+		this.kind = kind;
 	}
 
 	public UUID getId() {
@@ -56,6 +63,10 @@ public class Room {
 
 	public String getAdminSecret() {
 		return adminSecret;
+	}
+
+	public RoomKind getKind() {
+		return kind;
 	}
 
 }

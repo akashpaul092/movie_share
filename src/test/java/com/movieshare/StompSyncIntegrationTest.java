@@ -46,7 +46,7 @@ class StompSyncIntegrationTest {
 		String created = http.post()
 				.uri("/api/rooms")
 				.contentType(MediaType.APPLICATION_JSON)
-				.body("{}")
+				.body("{\"kind\":\"WATCH_PARTY\"}")
 				.retrieve()
 				.body(String.class);
 

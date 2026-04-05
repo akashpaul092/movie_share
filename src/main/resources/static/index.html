@@ -31,9 +31,15 @@
     h1 { margin: 0; font-size: 1.25rem; font-weight: 650; letter-spacing: -0.02em; }
     p.lead { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem; }
     main {
-      padding: clamp(1rem, 4vw, 2.5rem);
-      max-width: 1120px;
+      padding: clamp(1rem, 3vw, 2rem);
+      max-width: min(1920px, 100%);
       margin: 0 auto;
+      width: 100%;
+    }
+    #gate {
+      max-width: 56rem;
+      margin-left: auto;
+      margin-right: auto;
     }
     .grid { display: grid; gap: 1rem; }
     @media (min-width: 800px) {
@@ -96,33 +102,221 @@
       border: 1px solid var(--border);
     }
     #player { width: 100%; height: 100%; }
-    .theater-row {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: 1fr;
-      align-items: start;
-    }
-    @media (min-width: 900px) {
-      .theater-row {
-        grid-template-columns: 1fr minmax(260px, 300px);
-      }
-      .chat-panel { position: sticky; top: 0.75rem; }
-    }
-    .chat-panel h3 {
-      margin: 0 0 0.65rem;
+    .watch-share-section h3 {
+      margin: 0 0 0.35rem;
       font-size: 0.95rem;
       font-weight: 650;
     }
+    .watch-share-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.65rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+    }
+    .watch-share-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-top: 0.5rem;
+    }
+    .watch-share-local {
+      flex: 0 1 auto;
+    }
+    .watch-share-local .watchcam-local {
+      width: 100%;
+      max-width: min(100%, 280px);
+      border-radius: 10px;
+      border: 2px solid rgba(88, 166, 255, 0.55);
+    }
+    .watch-share-remotes {
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+    .chat-panel .btn-share-video {
+      width: 100%;
+      margin-top: 0.75rem;
+      font-weight: 650;
+    }
+    .watch-local-pip:not(.is-live) {
+      display: none !important;
+    }
+    .watch-share-section .remote-grid.watchcam-remotes .remote-tile {
+      width: clamp(120px, 18vw, 200px);
+      flex-shrink: 0;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .modal-backdrop.hidden { display: none !important; }
+    .modal-dialog {
+      max-width: 420px;
+      width: 100%;
+      margin: 0;
+    }
+    .modal-dialog h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.05rem;
+      font-weight: 650;
+    }
+    #pane-watch {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .theater-row {
+      display: grid;
+      gap: clamp(0.65rem, 1.5vw, 1rem);
+      /* Mobile: one column — movie first, chat below (DOM order). */
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    @media (min-width: 800px) {
+      .theater-row {
+        /* ~80% movie / ~20% chat */
+        grid-template-columns: minmax(0, 8fr) minmax(0, 2fr);
+        align-items: stretch;
+        gap: 1rem;
+        min-height: clamp(400px, 52vh, 680px);
+      }
+      .watch-theater-main {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: stretch;
+        min-width: 0;
+        height: 100%;
+      }
+      .watch-theater-main .player-wrap {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        flex: 0 1 auto;
+      }
+      .theater-row .chat-panel,
+      .meet-row .chat-panel {
+        position: sticky;
+        top: 0.75rem;
+        align-self: stretch;
+        height: 100%;
+        max-height: calc(100vh - 2rem);
+        overflow: hidden;
+      }
+      .theater-row .chat-panel .chat-log,
+      .meet-row .chat-panel .chat-log {
+        flex: 1 1 auto;
+        min-height: 220px;
+        height: auto;
+        max-height: none;
+      }
+    }
+    .meet-row {
+      display: grid;
+      gap: clamp(0.65rem, 1.5vw, 1rem);
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+    @media (min-width: 800px) {
+      .meet-row {
+        grid-template-columns: minmax(0, 8fr) minmax(0, 2fr);
+        align-items: stretch;
+        gap: 1rem;
+        min-height: clamp(400px, 52vh, 680px);
+      }
+      .meet-video-column {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        height: 100%;
+        min-height: 0;
+      }
+    }
+    .meet-video-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: 0;
+    }
+    .meet-remotes-block {
+      min-height: 0;
+      flex: 1 1 auto;
+    }
+    .meet-video-column .local-preview {
+      max-height: min(280px, 38vh);
+    }
+    .meet-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .chat-panel h3 {
+      margin: 0 0 0.65rem;
+      font-size: 0.9rem;
+      font-weight: 650;
+      flex-shrink: 0;
+    }
+    @media (min-width: 800px) {
+      .theater-row .chat-panel,
+      .meet-row .chat-panel {
+        padding: 0.85rem 0.75rem;
+        font-size: 0.9rem;
+      }
+      .theater-row .chat-panel h3,
+      .meet-row .chat-panel h3 { font-size: 0.9rem; }
+      .theater-row .chat-log,
+      .meet-row .chat-log {
+        font-size: 0.82rem;
+      }
+    }
+    .chat-panel label,
+    .chat-panel .row {
+      flex-shrink: 0;
+    }
+    .chat-panel .btn-share-video {
+      flex-shrink: 0;
+    }
     .chat-log {
-      min-height: 140px;
-      max-height: min(38vh, 300px);
+      flex-shrink: 0;
+      min-height: 220px;
+      height: clamp(260px, 44vh, 560px);
+      max-height: min(560px, 52vh);
       overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
       font-size: 0.85rem;
       padding: 0.5rem 0.6rem;
       background: var(--bg);
       border-radius: 8px;
       border: 1px solid var(--border);
       margin-bottom: 0.65rem;
+    }
+    @media (max-width: 799px) {
+      .chat-log {
+        height: clamp(240px, 38vh, 480px);
+        max-height: min(480px, 45vh);
+      }
+    }
+    .chat-message-input:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .chat-name-hint.is-ready {
+      color: #3fb950;
     }
     .chat-line {
       margin-bottom: 0.4rem;
@@ -158,13 +352,6 @@
       background: var(--accent);
       color: #041019;
       border-color: transparent;
-    }
-    .video-call-layout {
-      display: grid;
-      gap: 1rem;
-    }
-    @media (min-width: 700px) {
-      .video-call-layout { grid-template-columns: minmax(240px, 300px) 1fr; }
     }
     .local-preview {
       width: 100%;
@@ -208,29 +395,56 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .watchcam-local {
+      width: 100%;
+      max-width: none;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      max-height: none;
+    }
+    .remote-grid.watchcam-remotes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: flex-start;
+    }
+    .remote-grid.watchcam-remotes .remote-tile { aspect-ratio: 16 / 9; }
   </style>
 </head>
 <body>
   <header>
     <h1>Movie Share</h1>
-    <p class="lead">Two modes in one room: <strong>Watch party</strong> (YouTube sync) and <strong>Video &amp; screen</strong> (WebRTC). Create or join a room, then pick a tab.</p>
+    <p class="lead">Two products, separate rooms: codes from <strong>Movie night</strong> only work there; <strong>Meet &amp; share</strong> has its own creates/joins (Zoom-style including screen share).</p>
   </header>
   <main>
     <section id="gate" class="grid two">
       <div class="card">
-        <h2 style="margin:0 0 0.75rem;font-size:1rem;">Start a room</h2>
-        <label for="roomName">Optional name</label>
-        <input id="roomName" type="text" placeholder="Friday movie night" autocomplete="off" />
+        <h2 style="margin:0 0 0.35rem;font-size:1rem;">Movie night</h2>
+        <p class="hint" style="margin:0 0 0.75rem;">YouTube sync, chat, optional webcam — no screen share.</p>
+        <label for="roomNameMovie">Optional name</label>
+        <input id="roomNameMovie" type="text" placeholder="Friday movie night" autocomplete="off" />
         <div class="row" style="margin-top:0.75rem;">
-          <button type="button" class="primary" id="btnCreate">Create room</button>
+          <button type="button" class="primary" id="btnCreateMovie">Create movie room</button>
+        </div>
+        <label for="joinCodeMovie" style="margin-top:1rem;">Join movie room (code)</label>
+        <input id="joinCodeMovie" type="text" placeholder="e.g. ABC2XY7Z" autocomplete="off" />
+        <div class="row" style="margin-top:0.75rem;">
+          <button type="button" class="primary" id="btnJoinMovie">Join</button>
         </div>
       </div>
       <div class="card">
-        <h2 style="margin:0 0 0.75rem;font-size:1rem;">Join with code</h2>
-        <label for="joinCode">Room code</label>
-        <input id="joinCode" type="text" placeholder="e.g. ABC2XY7Z" autocomplete="off" />
+        <h2 style="margin:0 0 0.35rem;font-size:1rem;">Meet &amp; share</h2>
+        <p class="hint" style="margin:0 0 0.75rem;">Camera, screen share — not linked to YouTube sync.</p>
+        <label for="roomNameMeet">Optional name</label>
+        <input id="roomNameMeet" type="text" placeholder="Team standup" autocomplete="off" />
         <div class="row" style="margin-top:0.75rem;">
-          <button type="button" class="primary" id="btnJoin">Join</button>
+          <button type="button" class="primary" id="btnCreateMeet">Create meet room</button>
+        </div>
+        <label for="joinCodeMeet" style="margin-top:1rem;">Join meet room (code)</label>
+        <input id="joinCodeMeet" type="text" placeholder="e.g. ABC2XY7Z" autocomplete="off" />
+        <div class="row" style="margin-top:0.75rem;">
+          <button type="button" class="primary" id="btnJoinMeet">Join</button>
         </div>
       </div>
     </section>
@@ -247,7 +461,7 @@
         </div>
         <div class="service-tabs" role="tablist" aria-label="Room services">
           <button type="button" class="service-tab active" id="tabWatchParty" role="tab" aria-selected="true">Watch party</button>
-          <button type="button" class="service-tab" id="tabVideoCall" role="tab" aria-selected="false">Video &amp; screen</button>
+          <button type="button" class="service-tab" id="tabVideoCall" role="tab" aria-selected="false">Meet &amp; share</button>
         </div>
       </div>
 
@@ -261,51 +475,105 @@
           </div>
           <p class="hint" id="theaterHint">The host controls the video. Viewers follow synced playback automatically.</p>
         </div>
+        <div id="watchShareSection" class="card watch-share-section hidden" aria-live="polite">
+          <h3>Room video</h3>
+          <p class="hint" style="margin:0;">Webcam strip for this watch party. <strong>Screen share</strong> is only in <strong>Meet &amp; share</strong>.</p>
+          <div class="watch-share-strip">
+            <div class="watch-share-local">
+              <video id="localVideoWatch" class="local-preview watchcam-local watch-local-pip" autoplay muted playsinline></video>
+            </div>
+            <div class="watch-share-remotes">
+              <span class="hint" style="display:block;margin-bottom:0.35rem;">Friends on cam</span>
+              <div id="remoteVideosWatch" class="remote-grid watchcam-remotes" role="group" aria-label="Remote videos watch party"></div>
+            </div>
+          </div>
+          <div class="watch-share-toolbar">
+            <span class="hint" id="watchcamStatus" style="margin:0;">Camera off</span>
+            <button type="button" id="btnStopCameraWatch" disabled>Stop video</button>
+          </div>
+        </div>
         <div class="theater-row">
-          <div class="player-wrap">
-            <div id="player"></div>
+          <div class="watch-theater-main">
+            <div class="player-wrap">
+              <div id="player"></div>
+            </div>
           </div>
           <aside class="card chat-panel">
             <h3>Room chat</h3>
             <div id="chatLog" class="chat-log" aria-live="polite"></div>
             <label for="chatDisplayName">Your name</label>
-            <input id="chatDisplayName" type="text" placeholder="Guest" maxlength="40" autocomplete="nickname" />
+            <input id="chatDisplayName" type="text" placeholder="Required to send messages" maxlength="40" autocomplete="nickname" />
+            <p class="hint chat-name-hint" id="chatNameHintWatch" style="margin:0.3rem 0 0;">Enter your name to enable the message box and Send.</p>
             <label for="chatInput" style="margin-top:0.5rem;">Message</label>
             <div class="row" style="margin-top:0.35rem;">
-              <input id="chatInput" type="text" placeholder="Say something…" maxlength="500" autocomplete="off" style="flex:1;min-width:0;" />
-              <button type="button" class="primary" id="btnSendChat">Send</button>
+              <input id="chatInput" class="chat-message-input" type="text" placeholder="Say something…" maxlength="500" autocomplete="off" style="flex:1;min-width:0;" disabled />
+              <button type="button" class="primary" id="btnSendChat" disabled>Send</button>
             </div>
+            <button type="button" class="primary btn-share-video" id="btnOpenWatchVideoModal" aria-haspopup="dialog">Share video</button>
           </aside>
         </div>
       </div>
 
       <div id="pane-video" class="hidden">
-        <div class="card">
-          <h2 style="margin:0 0 0.5rem;font-size:1rem;">Video call &amp; screen share</h2>
-          <p class="hint" style="margin:0;">Peer-to-peer (WebRTC). <strong>Browsers only allow camera/mic on HTTPS</strong> or on <code>http://localhost</code> / <code>127.0.0.1</code>. If you opened <code>http://192.168.x.x:8081</code> or <code>http://0.0.0.0:8081</code>, use <strong>HTTPS</strong> (reverse proxy + certificate) or test video from this machine via <code>http://localhost:8081</code>. Also use your real LAN IP in the URL bar, not <code>0.0.0.0</code> (that address is only for binding the server).</p>
-          <div class="video-call-layout" style="margin-top:1rem;">
-            <div>
-              <label for="localVideo">You (local)</label>
-              <video id="localVideo" class="local-preview" autoplay muted playsinline></video>
-              <div class="row" style="margin-top:0.65rem;">
-                <button type="button" class="primary" id="btnStartCamera">Start camera &amp; mic</button>
-                <button type="button" id="btnStopCamera" disabled>Stop camera</button>
+        <div class="meet-pane">
+          <div class="card">
+            <h2 style="margin:0 0 0.5rem;font-size:1rem;">Meet &amp; share (camera + screen)</h2>
+            <p class="hint" style="margin:0;">Zoom-style: same peer connections as Watch party for video. <strong>Screen share is only offered here.</strong> <strong>HTTPS</strong> or <code>http://localhost</code> required for camera/screen in most browsers.</p>
+          </div>
+          <div class="meet-row">
+            <div class="card meet-video-column">
+              <div class="meet-video-stack">
+                <div class="meet-local-block">
+                  <span class="hint" style="display:block;margin-bottom:0.35rem;">You (local)</span>
+                  <video id="localVideoMeet" class="local-preview" autoplay muted playsinline></video>
+                  <div class="row" style="margin-top:0.65rem;">
+                    <button type="button" class="primary" id="btnStartCamera">Start camera &amp; mic</button>
+                    <button type="button" id="btnStopCamera" disabled>Stop camera</button>
+                  </div>
+                  <div class="row" style="margin-top:0.5rem;">
+                    <button type="button" id="btnShareScreen" disabled>Share screen</button>
+                    <button type="button" id="btnStopShare" disabled>Stop screen share</button>
+                  </div>
+                  <p class="hint" id="webrtcStatus">Camera off</p>
+                </div>
+                <div class="meet-remotes-block">
+                  <span class="hint" style="display:block;margin-bottom:0.35rem;">Remote participants</span>
+                  <div id="remoteVideos" class="remote-grid" role="group" aria-label="Remote videos meet"></div>
+                </div>
               </div>
-              <div class="row" style="margin-top:0.5rem;">
-                <button type="button" id="btnShareScreen" disabled>Share screen</button>
-                <button type="button" id="btnStopShare" disabled>Stop screen share</button>
+            </div>
+            <aside class="card chat-panel">
+              <h3>Room chat</h3>
+              <div id="chatLogMeet" class="chat-log" aria-live="polite"></div>
+              <label for="chatDisplayNameMeet">Your name</label>
+              <input id="chatDisplayNameMeet" type="text" placeholder="Required to send messages" maxlength="40" autocomplete="nickname" />
+              <p class="hint chat-name-hint" id="chatNameHintMeet" style="margin:0.3rem 0 0;">Enter your name to enable the message box and Send.</p>
+              <label for="chatInputMeet" style="margin-top:0.5rem;">Message</label>
+              <div class="row" style="margin-top:0.35rem;">
+                <input id="chatInputMeet" class="chat-message-input" type="text" placeholder="Say something…" maxlength="500" autocomplete="off" style="flex:1;min-width:0;" disabled />
+                <button type="button" class="primary" id="btnSendChatMeet" disabled>Send</button>
               </div>
-              <p class="hint" id="webrtcStatus">Camera off</p>
-            </div>
-            <div>
-              <span class="hint" style="display:block;margin-bottom:0.35rem;">Remote participants</span>
-              <div id="remoteVideos" class="remote-grid" role="group" aria-label="Remote videos"></div>
-            </div>
+            </aside>
           </div>
         </div>
       </div>
     </section>
   </main>
+
+  <div id="watchVideoModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="watchVideoModalTitle">
+    <div class="modal-dialog card">
+      <h2 id="watchVideoModalTitle">Share your video</h2>
+      <p class="hint" style="margin:0 0 1rem;line-height:1.45;">
+        After you allow access, a video strip appears between the load controls and the movie player.
+        Your browser will ask to use the camera and microphone next.
+        <strong>Screen share</strong> is only in <strong>Meet &amp; share</strong> rooms.
+      </p>
+      <div class="row" style="flex-wrap:wrap;">
+        <button type="button" class="primary" id="btnStartCameraWatch">Allow camera &amp; mic</button>
+        <button type="button" id="btnWatchVideoCancel">Not now</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
@@ -325,6 +593,8 @@
       let isAdmin = false;
       let adminToken = null;
       let pendingJoinState = null;
+      /** @type {'WATCH_PARTY' | 'MEET' | null} */
+      let roomProduct = null;
 
       const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
       const activeVideoPeers = new Set();
@@ -336,8 +606,81 @@
       const $ = (id) => document.getElementById(id);
       const gate = $('gate');
       const theater = $('theater');
+      const ROOM_SESSION_KEY = 'movieshare_room_session';
 
       function setStatus(text) { $('status').textContent = text; }
+
+      function persistRoomSession() {
+        if (!roomCode || !roomProduct) return;
+        try {
+          sessionStorage.setItem(ROOM_SESSION_KEY, JSON.stringify({ code: roomCode, kind: roomProduct }));
+        } catch (e) { /* ignore */ }
+      }
+
+      function clearRoomSession() {
+        try {
+          sessionStorage.removeItem(ROOM_SESSION_KEY);
+        } catch (e) { /* ignore */ }
+      }
+
+      async function restoreRoomSession() {
+        var raw = null;
+        try {
+          raw = sessionStorage.getItem(ROOM_SESSION_KEY);
+        } catch (e) {
+          return;
+        }
+        if (!raw) return;
+        var sess = null;
+        try {
+          sess = JSON.parse(raw);
+        } catch (err) {
+          clearRoomSession();
+          return;
+        }
+        if (!sess || typeof sess.code !== 'string' || !sess.kind) {
+          clearRoomSession();
+          return;
+        }
+        const code = sess.code.trim().toUpperCase();
+        const expectedKind = sess.kind === 'MEET' ? 'MEET' : 'WATCH_PARTY';
+        var res;
+        try {
+          res = await api('/api/rooms/' + encodeURIComponent(code));
+        } catch (err) {
+          clearRoomSession();
+          return;
+        }
+        if (res.status === 404) {
+          clearRoomSession();
+          try {
+            alert('Your previous room is no longer available.');
+          } catch (e2) { /* ignore */ }
+          return;
+        }
+        if (!res.ok) {
+          clearRoomSession();
+          return;
+        }
+        var payload = await res.json();
+        var rk = payload.room && payload.room.kind;
+        if (rk !== expectedKind) {
+          clearRoomSession();
+          return;
+        }
+        var stored = null;
+        try {
+          stored = sessionStorage.getItem('movieshare_admin_' + code);
+        } catch (e3) { /* ignore */ }
+        if (expectedKind === 'WATCH_PARTY' && payload.state && payload.state.videoId) {
+          $('videoInput').value = payload.state.videoId;
+        }
+        enterRoom(code, {
+          kind: rk,
+          adminToken: stored || null,
+          joinState: expectedKind === 'WATCH_PARTY' ? (payload.state || null) : null
+        });
+      }
 
       function extractVideoId(raw) {
         if (!raw) return null;
@@ -369,6 +712,11 @@
       }
 
       function updateHostUi() {
+        if (roomProduct === 'MEET') {
+          $('roomRoleBadge').textContent = isAdmin ? 'Organizer' : 'Participant';
+          $('roomRoleBadge').className = 'badge ' + (isAdmin ? 'host' : 'viewer');
+          return;
+        }
         var host = isAdmin;
         $('videoInput').disabled = !host;
         $('btnLoad').disabled = !host;
@@ -378,6 +726,21 @@
         $('theaterHint').textContent = host
           ? 'You are the host — load video, play/pause, and broadcast position for everyone.'
           : 'You are a viewer — playback follows the host. Chat is open to everyone.';
+      }
+
+      function applyTheaterLayoutForProduct() {
+        var tabs = document.querySelector('.service-tabs');
+        var paneWatch = $('pane-watch');
+        var paneMeet = $('pane-video');
+        if (roomProduct === 'WATCH_PARTY') {
+          if (tabs) tabs.classList.add('hidden');
+          if (paneWatch) paneWatch.classList.remove('hidden');
+          if (paneMeet) paneMeet.classList.add('hidden');
+        } else if (roomProduct === 'MEET') {
+          if (tabs) tabs.classList.add('hidden');
+          if (paneWatch) paneWatch.classList.add('hidden');
+          if (paneMeet) paneMeet.classList.remove('hidden');
+        }
       }
 
       function getInitialVideoId() {
@@ -440,8 +803,8 @@
         }
       }
 
-      function appendChatLine(msg) {
-        if (!msg || !msg.text) return;
+      function appendChatLineTo(logEl, msg) {
+        if (!logEl || !msg || !msg.text) return;
         const line = document.createElement('div');
         line.className = 'chat-line';
         const who = document.createElement('span');
@@ -452,16 +815,55 @@
         txt.textContent = ' ' + msg.text;
         line.appendChild(who);
         line.appendChild(txt);
-        const log = $('chatLog');
-        log.appendChild(line);
-        log.scrollTop = log.scrollHeight;
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function appendChatLine(msg) {
+        appendChatLineTo($('chatLog'), msg);
+        appendChatLineTo($('chatLogMeet'), msg);
+      }
+
+      function refreshChatSendEnabled() {
+        var watchName = ($('chatDisplayName') && $('chatDisplayName').value.trim()) || '';
+        var meetName = ($('chatDisplayNameMeet') && $('chatDisplayNameMeet').value.trim()) || '';
+        var watchOk = watchName.length > 0;
+        var meetOk = meetName.length > 0;
+        var ci = $('chatInput');
+        var cim = $('chatInputMeet');
+        var bs = $('btnSendChat');
+        var bsm = $('btnSendChatMeet');
+        if (ci) ci.disabled = !watchOk;
+        if (cim) cim.disabled = !meetOk;
+        if (bs) bs.disabled = !watchOk;
+        if (bsm) bsm.disabled = !meetOk;
+        var hw = $('chatNameHintWatch');
+        var hm = $('chatNameHintMeet');
+        if (hw) {
+          hw.classList.toggle('is-ready', watchOk);
+          hw.textContent = watchOk ? 'You can send messages.' : 'Enter your name to enable the message box and Send.';
+        }
+        if (hm) {
+          hm.classList.toggle('is-ready', meetOk);
+          hm.textContent = meetOk ? 'You can send messages.' : 'Enter your name to enable the message box and Send.';
+        }
       }
 
       function sendChat() {
         if (!stompConnected || !roomCode) return;
-        var text = $('chatInput').value.trim();
+        var isMeet = roomProduct === 'MEET';
+        var input = isMeet ? $('chatInputMeet') : $('chatInput');
+        var nameEl = isMeet ? $('chatDisplayNameMeet') : $('chatDisplayName');
+        if (!input || !nameEl) return;
+        var displayName = (nameEl.value || '').trim();
+        if (!displayName) {
+          alert('Please enter your name before sending a message.');
+          nameEl.focus();
+          refreshChatSendEnabled();
+          return;
+        }
+        var text = input.value.trim();
         if (!text) return;
-        var displayName = ($('chatDisplayName').value || '').trim() || 'Guest';
         var body = JSON.stringify({
           text: text,
           senderId: senderId,
@@ -469,7 +871,7 @@
           displayName: displayName
         });
         stompClient.send('/app/room/' + roomCode + '/chat', {}, body);
-        $('chatInput').value = '';
+        input.value = '';
       }
 
       function sendWebRtc(payload) {
@@ -500,15 +902,17 @@
         }
       }
 
-      function ensureRemoteTile(peerId) {
-        const grid = $('remoteVideos');
-        var el = document.getElementById('remote-wrap-' + peerId);
+      function ensureRemoteVideoInPane(peerId, pane) {
+        var gridId = pane === 'meet' ? 'remoteVideos' : 'remoteVideosWatch';
+        var grid = $(gridId);
+        if (!grid) return null;
+        var wrapId = 'remote-wrap-' + pane + '-' + peerId;
+        var el = document.getElementById(wrapId);
         if (el) return el.querySelector('video');
         el = document.createElement('div');
         el.className = 'remote-tile';
-        el.id = 'remote-wrap-' + peerId;
+        el.id = wrapId;
         var v = document.createElement('video');
-        v.id = 'remote-video-' + peerId;
         v.autoplay = true;
         v.playsInline = true;
         v.setAttribute('playsinline', '');
@@ -518,7 +922,45 @@
         el.appendChild(v);
         el.appendChild(lab);
         grid.appendChild(el);
+        refreshWatchShareSection();
         return v;
+      }
+
+      function setRemoteStreamForPeer(peerId, stream) {
+        if (!stream) return;
+        ['meet', 'watch'].forEach(function (pane) {
+          var vid = ensureRemoteVideoInPane(peerId, pane);
+          if (vid) vid.srcObject = stream;
+        });
+        refreshWatchShareSection();
+      }
+
+      function refreshWatchShareSection() {
+        var section = $('watchShareSection');
+        var st = $('watchcamStatus');
+        if (!section) return;
+        var hasLocal = !!localStream;
+        var rvw = $('remoteVideosWatch');
+        var hasRemotes = rvw && rvw.querySelector('.remote-tile');
+        var show = !!(hasLocal || hasRemotes);
+        section.classList.toggle('hidden', !show);
+        if (st) {
+          if (!show) st.textContent = 'Camera off';
+          else if (hasLocal) st.textContent = 'Camera on';
+          else st.textContent = 'Friends on video';
+        }
+      }
+
+      function syncLocalPreviews() {
+        var s = localStream;
+        var m = $('localVideoMeet');
+        var w = $('localVideoWatch');
+        if (m) m.srcObject = s;
+        if (w) {
+          w.srcObject = s;
+          w.classList.toggle('is-live', !!s);
+        }
+        refreshWatchShareSection();
       }
 
       function removePeer(peerId) {
@@ -528,8 +970,11 @@
           try { pc.close(); } catch (e) { /* ignore */ }
           peers.delete(peerId);
         }
-        var wrap = document.getElementById('remote-wrap-' + peerId);
-        if (wrap) wrap.remove();
+        ['meet', 'watch'].forEach(function (pane) {
+          var wrap = document.getElementById('remote-wrap-' + pane + '-' + peerId);
+          if (wrap) wrap.remove();
+        });
+        refreshWatchShareSection();
       }
 
       function teardownWebRtc() {
@@ -550,15 +995,20 @@
           screenStream = null;
         }
         cameraVideoTrack = null;
-        var lv = $('localVideo');
-        if (lv) lv.srcObject = null;
+        syncLocalPreviews();
         var rv = $('remoteVideos');
         if (rv) rv.innerHTML = '';
+        var rvw = $('remoteVideosWatch');
+        if (rvw) rvw.innerHTML = '';
         if ($('btnStartCamera')) $('btnStartCamera').disabled = false;
         if ($('btnStopCamera')) $('btnStopCamera').disabled = true;
+        if ($('btnStartCameraWatch')) $('btnStartCameraWatch').disabled = false;
+        if ($('btnStopCameraWatch')) $('btnStopCameraWatch').disabled = true;
         if ($('btnShareScreen')) $('btnShareScreen').disabled = true;
         if ($('btnStopShare')) $('btnStopShare').disabled = true;
         if ($('webrtcStatus')) $('webrtcStatus').textContent = 'Camera off';
+        if ($('watchcamStatus')) $('watchcamStatus').textContent = 'Camera off';
+        refreshWatchShareSection();
       }
 
       function videoSender(pc) {
@@ -579,8 +1029,7 @@
           });
         }
         pc.ontrack = function (ev) {
-          var vid = ensureRemoteTile(peerId);
-          if (ev.streams && ev.streams[0]) vid.srcObject = ev.streams[0];
+          if (ev.streams && ev.streams[0]) setRemoteStreamForPeer(peerId, ev.streams[0]);
         };
         pc.onicecandidate = function (ev) {
           if (ev.candidate) {
@@ -689,6 +1138,7 @@
         $('btnShareScreen').disabled = true;
         $('btnStopShare').disabled = false;
         $('webrtcStatus').textContent = 'Sharing screen';
+        if ($('watchcamStatus')) $('watchcamStatus').textContent = 'Screen share runs in Meet tab; friends still see you here if video is forwarded.';
       }
 
       function stopScreenShare() {
@@ -706,6 +1156,7 @@
         $('btnShareScreen').disabled = !localStream;
         $('btnStopShare').disabled = true;
         $('webrtcStatus').textContent = localStream ? 'Camera on' : 'Camera off';
+        if ($('watchcamStatus')) $('watchcamStatus').textContent = localStream ? 'Camera on' : 'Camera off';
       }
 
       function connectStomp() {
@@ -714,12 +1165,14 @@
         stompClient.debug = null;
         stompClient.connect({}, function () {
           stompConnected = true;
-          setStatus('Connected — syncing');
-          stompClient.subscribe('/topic/room.' + roomCode, function (evt) {
-            const data = JSON.parse(evt.body);
-            if (data.senderId === senderId) return;
-            applyRemote(data);
-          });
+          setStatus(roomProduct === 'WATCH_PARTY' ? 'Connected — movie room' : 'Connected — meet room');
+          if (roomProduct === 'WATCH_PARTY') {
+            stompClient.subscribe('/topic/room.' + roomCode, function (evt) {
+              const data = JSON.parse(evt.body);
+              if (data.senderId === senderId) return;
+              applyRemote(data);
+            });
+          }
           stompClient.subscribe('/topic/room.' + roomCode + '.chat', function (evt) {
             try {
               appendChatLine(JSON.parse(evt.body));
@@ -739,6 +1192,7 @@
       function enterRoom(code, options) {
         options = options || {};
         roomCode = code;
+        roomProduct = options.kind || 'WATCH_PARTY';
         adminToken = options.adminToken || null;
         isAdmin = !!adminToken;
         if (adminToken) {
@@ -749,19 +1203,24 @@
         pendingJoinState = options.joinState || null;
         gate.classList.add('hidden');
         theater.classList.remove('hidden');
-        $('roomLabel').textContent = 'ROOM ' + roomCode;
+        $('roomLabel').textContent = (roomProduct === 'MEET' ? 'MEET · ' : 'MOVIE · ') + roomCode;
         $('chatLog').innerHTML = '';
         $('chatInput').value = '';
+        if ($('chatLogMeet')) $('chatLogMeet').innerHTML = '';
+        if ($('chatInputMeet')) $('chatInputMeet').value = '';
+        refreshChatSendEnabled();
+        applyTheaterLayoutForProduct();
         updateHostUi();
-        switchServiceTab('watch');
         connectStomp();
-        if (window.YT && window.YT.Player) {
+        if (roomProduct === 'WATCH_PARTY' && window.YT && window.YT.Player) {
           ensurePlayer();
         }
+        persistRoomSession();
       }
 
       function leaveRoom() {
         teardownWebRtc();
+        clearRoomSession();
         if (roomCode) {
           try {
             sessionStorage.removeItem('movieshare_admin_' + roomCode);
@@ -785,12 +1244,18 @@
         stompClient = null;
         stompConnected = false;
         roomCode = null;
+        roomProduct = null;
         lastPolledTime = null;
         isAdmin = false;
         adminToken = null;
         pendingJoinState = null;
         $('chatLog').innerHTML = '';
         $('chatInput').value = '';
+        if ($('chatDisplayName')) $('chatDisplayName').value = '';
+        if ($('chatLogMeet')) $('chatLogMeet').innerHTML = '';
+        if ($('chatInputMeet')) $('chatInputMeet').value = '';
+        if ($('chatDisplayNameMeet')) $('chatDisplayNameMeet').value = '';
+        refreshChatSendEnabled();
       }
 
       function ensurePlayer() {
@@ -845,14 +1310,19 @@
         return res;
       }
 
-      $('btnCreate').onclick = async function () {
-        const name = $('roomName').value || null;
+      async function createRoomForProduct(kind, nameInputId) {
+        var nameVal = $(nameInputId);
+        var name = nameVal && nameVal.value && nameVal.value.trim() ? nameVal.value.trim() : null;
         const res = await api('/api/rooms', {
           method: 'POST',
-          body: JSON.stringify({ name: name })
+          body: JSON.stringify({ name: name, kind: kind })
         });
         if (res.status === 429) {
           alert('Too many rooms created from this network. Try again later.');
+          return;
+        }
+        if (res.status === 400) {
+          alert('Invalid room type');
           return;
         }
         if (!res.ok) {
@@ -864,11 +1334,11 @@
           alert('Could not create room (missing host token)');
           return;
         }
-        enterRoom(data.roomCode, { adminToken: data.adminToken, joinState: null });
-      };
+        enterRoom(data.roomCode, { kind: data.kind || kind, adminToken: data.adminToken, joinState: null });
+      }
 
-      $('btnJoin').onclick = async function () {
-        const raw = $('joinCode').value;
+      async function joinRoomForProduct(expectedKind, joinInputId) {
+        const raw = $(joinInputId).value;
         const code = raw.trim().toUpperCase();
         if (!code) {
           alert('Enter a room code');
@@ -884,7 +1354,14 @@
           return;
         }
         const payload = await res.json();
-        if (payload.state && payload.state.videoId) {
+        var rk = payload.room && payload.room.kind;
+        if (rk !== expectedKind) {
+          alert(expectedKind === 'WATCH_PARTY'
+            ? 'That code is a Meet & share room. Use “Join meet room” on the right.'
+            : 'That code is a Movie night room. Use “Join movie room” on the left.');
+          return;
+        }
+        if (expectedKind === 'WATCH_PARTY' && payload.state && payload.state.videoId) {
           $('videoInput').value = payload.state.videoId;
         }
         var stored = null;
@@ -892,9 +1369,23 @@
           stored = sessionStorage.getItem('movieshare_admin_' + code);
         } catch (e) { /* ignore */ }
         enterRoom(code, {
+          kind: rk,
           adminToken: stored || null,
-          joinState: payload.state || null
+          joinState: expectedKind === 'WATCH_PARTY' ? (payload.state || null) : null
         });
+      }
+
+      $('btnCreateMovie').onclick = async function () {
+        await createRoomForProduct('WATCH_PARTY', 'roomNameMovie');
+      };
+      $('btnCreateMeet').onclick = async function () {
+        await createRoomForProduct('MEET', 'roomNameMeet');
+      };
+      $('btnJoinMovie').onclick = async function () {
+        await joinRoomForProduct('WATCH_PARTY', 'joinCodeMovie');
+      };
+      $('btnJoinMeet').onclick = async function () {
+        await joinRoomForProduct('MEET', 'joinCodeMeet');
       };
 
       $('btnLeave').onclick = leaveRoom;
@@ -906,6 +1397,18 @@
           sendChat();
         }
       });
+      $('chatInputMeet').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendChat();
+        }
+      });
+      $('btnSendChatMeet').onclick = sendChat;
+      ;['input', 'change'].forEach(function (ev) {
+        if ($('chatDisplayName')) $('chatDisplayName').addEventListener(ev, refreshChatSendEnabled);
+        if ($('chatDisplayNameMeet')) $('chatDisplayNameMeet').addEventListener(ev, refreshChatSendEnabled);
+      });
+      refreshChatSendEnabled();
 
       $('btnLoad').onclick = function () {
         if (!isAdmin) return;
@@ -930,7 +1433,7 @@
       $('tabWatchParty').onclick = function () { switchServiceTab('watch'); };
       $('tabVideoCall').onclick = function () { switchServiceTab('video'); };
 
-      $('btnStartCamera').onclick = async function () {
+      async function startCameraFromUser() {
         if (!roomCode || !stompConnected) {
           alert('Join a room first');
           return;
@@ -955,21 +1458,54 @@
           return;
         }
         cameraVideoTrack = localStream.getVideoTracks()[0] || null;
-        $('localVideo').srcObject = localStream;
-        $('btnStartCamera').disabled = true;
-        $('btnStopCamera').disabled = false;
-        $('btnShareScreen').disabled = false;
-        $('webrtcStatus').textContent = 'Camera on — finding peers…';
+        syncLocalPreviews();
+        if ($('btnStartCamera')) $('btnStartCamera').disabled = true;
+        if ($('btnStartCameraWatch')) $('btnStartCameraWatch').disabled = true;
+        if ($('btnStopCamera')) $('btnStopCamera').disabled = false;
+        if ($('btnStopCameraWatch')) $('btnStopCameraWatch').disabled = false;
+        if ($('btnShareScreen')) $('btnShareScreen').disabled = false;
+        if ($('webrtcStatus')) $('webrtcStatus').textContent = 'Camera on — finding peers…';
+        if ($('watchcamStatus')) $('watchcamStatus').textContent = 'Camera on';
+        if ($('watchVideoModal')) $('watchVideoModal').classList.add('hidden');
         sendWebRtc({ type: 'joined-video' });
         activeVideoPeers.forEach(function (pid) {
           if (pid !== senderId) tryConnectToPeer(pid);
         });
-      };
+      }
 
-      $('btnStopCamera').onclick = function () {
+      $('btnStartCamera').onclick = function () { startCameraFromUser(); };
+      $('btnStartCameraWatch').onclick = function () { startCameraFromUser(); };
+
+      var watchVideoModalEl = $('watchVideoModal');
+      if ($('btnOpenWatchVideoModal')) {
+        $('btnOpenWatchVideoModal').onclick = function () {
+          if (!roomCode || !stompConnected) {
+            alert('Join a room first');
+            return;
+          }
+          if (watchVideoModalEl) watchVideoModalEl.classList.remove('hidden');
+        };
+      }
+      if ($('btnWatchVideoCancel') && watchVideoModalEl) {
+        $('btnWatchVideoCancel').onclick = function () {
+          watchVideoModalEl.classList.add('hidden');
+        };
+        watchVideoModalEl.addEventListener('click', function (ev) {
+          if (ev.target === watchVideoModalEl) watchVideoModalEl.classList.add('hidden');
+        });
+      }
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Escape' || !watchVideoModalEl || watchVideoModalEl.classList.contains('hidden')) return;
+        watchVideoModalEl.classList.add('hidden');
+      });
+
+      function stopCameraAndCleanup() {
         stopScreenShare();
         teardownWebRtc();
-      };
+      }
+
+      $('btnStopCamera').onclick = stopCameraAndCleanup;
+      $('btnStopCameraWatch').onclick = stopCameraAndCleanup;
 
       $('btnShareScreen').onclick = function () { startScreenShare(); };
       $('btnStopShare').onclick = function () { stopScreenShare(); };
@@ -977,6 +1513,8 @@
       window.onYouTubeIframeAPIReady = function () {
         if (roomCode) ensurePlayer();
       };
+
+      restoreRoomSession();
     })();
   </script>
 </body>

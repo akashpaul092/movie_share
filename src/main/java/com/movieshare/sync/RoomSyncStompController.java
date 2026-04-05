@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.movieshare.domain.Room;
+import com.movieshare.domain.RoomKind;
 import com.movieshare.domain.RoomRepository;
 import com.movieshare.service.RoomService;
 
@@ -48,6 +49,9 @@ public class RoomSyncStompController {
 		String normalized = RoomService.normalizeCode(code);
 		Optional<Room> room = roomRepository.findByCode(normalized);
 		if (room.isEmpty()) {
+			return;
+		}
+		if (room.get().getKind() != RoomKind.WATCH_PARTY) {
 			return;
 		}
 		if (!adminTokensMatch(room.get().getAdminSecret(), message.adminToken())) {

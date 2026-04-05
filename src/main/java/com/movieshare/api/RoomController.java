@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.movieshare.api.dto.RoomCreateResponse;
 import com.movieshare.api.dto.RoomResponse;
 import com.movieshare.api.dto.RoomStateResponse;
+import com.movieshare.domain.RoomKind;
 import com.movieshare.service.RoomCreationRateLimiter;
 import com.movieshare.service.RoomPlaybackEstimator;
 import com.movieshare.service.RoomService;
@@ -41,8 +42,15 @@ public class RoomController {
 		if (!rateLimiter.allow(clientKey)) {
 			return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too many rooms created. Try again later.");
 		}
+		RoomKind kind;
+		try {
+			kind = parseKind(body != null ? body.kind() : null);
+		}
+		catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body("kind must be WATCH_PARTY or MEET");
+		}
 		String name = body != null ? body.name() : null;
-		RoomCreateResponse created = roomService.createRoom(name);
+		RoomCreateResponse created = roomService.createRoom(name, kind);
 		return ResponseEntity.status(HttpStatus.CREATED).body(created);
 	}
 
@@ -65,6 +73,13 @@ public class RoomController {
 		}
 	}
 
+	private static RoomKind parseKind(String raw) {
+		if (raw == null || raw.isBlank()) {
+			return RoomKind.WATCH_PARTY;
+		}
+		return RoomKind.valueOf(raw.trim().toUpperCase());
+	}
+
 	private static String clientKey(HttpServletRequest request) {
 		String forwarded = request.getHeader("X-Forwarded-For");
 		if (forwarded != null && !forwarded.isBlank()) {
@@ -73,7 +88,7 @@ public class RoomController {
 		return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
 	}
 
-	public record CreateRoomBody(String name) {
+	public record CreateRoomBody(String name, String kind) {
 	}
 
 	public record RoomWithStateResponse(RoomResponse room, RoomStateResponse state) {

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.movieshare.api.dto.RoomCreateResponse;
 import com.movieshare.api.dto.RoomResponse;
 import com.movieshare.domain.Room;
+import com.movieshare.domain.RoomKind;
 import com.movieshare.domain.RoomRepository;
 
 @Service
@@ -28,16 +29,16 @@ public class RoomService {
 	}
 
 	@Transactional
-	public RoomCreateResponse createRoom(String name) {
+	public RoomCreateResponse createRoom(String name, RoomKind kind) {
 		for (int i = 0; i < MAX_ATTEMPTS; i++) {
 			String code = generateCode();
 			if (roomRepository.existsByCode(code)) {
 				continue;
 			}
 			String adminSecret = UUID.randomUUID().toString();
-			Room room = new Room(UUID.randomUUID(), code, Instant.now(), blankToNull(name), adminSecret);
+			Room room = new Room(UUID.randomUUID(), code, Instant.now(), blankToNull(name), adminSecret, kind);
 			roomRepository.save(room);
-			return RoomCreateResponse.of(code, adminSecret);
+			return RoomCreateResponse.of(code, adminSecret, kind.name());
 		}
 		throw new IllegalStateException("Could not allocate a unique room code");
 	}
@@ -49,7 +50,7 @@ public class RoomService {
 	}
 
 	private RoomResponse toResponse(Room room) {
-		return new RoomResponse(room.getCode(), room.getCreatedAt(), room.getName());
+		return new RoomResponse(room.getCode(), room.getCreatedAt(), room.getName(), room.getKind().name());
 	}
 
 	private static String blankToNull(String s) {
