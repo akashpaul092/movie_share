@@ -256,9 +256,6 @@
       min-height: 0;
       flex: 1 1 auto;
     }
-    .meet-video-column .local-preview {
-      max-height: min(280px, 38vh);
-    }
     .meet-pane {
       display: flex;
       flex-direction: column;
@@ -362,6 +359,11 @@
       object-fit: cover;
       border: 1px solid var(--border);
     }
+    .meet-video-column .local-preview {
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
+      max-height: min(280px, 38vh);
+    }
     .remote-grid {
       display: grid;
       gap: 0.65rem;
@@ -379,6 +381,66 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .meet-video-column .remote-grid {
+      display: grid;
+      gap: 0.65rem;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .meet-video-column .remote-tile {
+      aspect-ratio: 1 / 1;
+    }
+    .meet-video-column .remote-tile video {
+      object-fit: contain;
+    }
+    .meet-page-nav {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+    .meet-page-nav button {
+      font-size: 0.8rem;
+      padding: 0.35rem 0.65rem;
+    }
+    .meet-page-nav .meet-page-info {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .meet-screen-share-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+    .meet-screen-share-strip .remote-tile,
+    .meet-screen-share-strip .local-tile-small {
+      width: clamp(96px, 14vw, 160px);
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
+    }
+    .meet-screen-share-strip .remote-tile video,
+    .meet-screen-share-strip .local-tile-small video {
+      object-fit: contain;
+    }
+    .meet-screen-main {
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    .meet-screen-main video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .meet-screenshare-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
     }
     .remote-label {
       position: absolute;
@@ -518,27 +580,36 @@
         <div class="meet-pane">
           <div class="card">
             <h2 style="margin:0 0 0.5rem;font-size:1rem;">Meet &amp; share (camera + screen)</h2>
-            <p class="hint" style="margin:0;">Zoom-style: same peer connections as Watch party for video. <strong>Screen share is only offered here.</strong> <strong>HTTPS</strong> or <code>http://localhost</code> required for camera/screen in most browsers.</p>
+            <p class="hint" style="margin:0;">Zoom-style video. <strong>Screen share is only offered here.</strong> <strong>HTTPS</strong> or <code>http://localhost</code> required for camera/screen in most browsers.</p>
+            <div class="row" style="margin-top:0.65rem;">
+              <button type="button" class="primary" id="btnStartCamera">Start camera &amp; mic</button>
+              <button type="button" id="btnStopCamera" disabled>Stop camera</button>
+              <button type="button" id="btnShareScreen" disabled>Share screen</button>
+              <button type="button" id="btnStopShare" disabled>Stop screen share</button>
+            </div>
+            <p class="hint" id="webrtcStatus">Camera off</p>
           </div>
-          <div class="meet-row">
-            <div class="card meet-video-column">
-              <div class="meet-video-stack">
+          <div class="meet-row" id="meetRow">
+            <div class="card meet-video-column" id="meetVideoColumn">
+              <div id="meetNormalView" class="meet-video-stack">
                 <div class="meet-local-block">
                   <span class="hint" style="display:block;margin-bottom:0.35rem;">You (local)</span>
                   <video id="localVideoMeet" class="local-preview" autoplay muted playsinline></video>
-                  <div class="row" style="margin-top:0.65rem;">
-                    <button type="button" class="primary" id="btnStartCamera">Start camera &amp; mic</button>
-                    <button type="button" id="btnStopCamera" disabled>Stop camera</button>
-                  </div>
-                  <div class="row" style="margin-top:0.5rem;">
-                    <button type="button" id="btnShareScreen" disabled>Share screen</button>
-                    <button type="button" id="btnStopShare" disabled>Stop screen share</button>
-                  </div>
-                  <p class="hint" id="webrtcStatus">Camera off</p>
                 </div>
                 <div class="meet-remotes-block">
-                  <span class="hint" style="display:block;margin-bottom:0.35rem;">Remote participants</span>
+                  <span class="hint" style="display:block;margin-bottom:0.35rem;">Participants</span>
                   <div id="remoteVideos" class="remote-grid" role="group" aria-label="Remote videos meet"></div>
+                  <div id="meetPageNav" class="meet-page-nav hidden">
+                    <button type="button" id="btnMeetPagePrev" disabled>&lt; Prev</button>
+                    <span class="meet-page-info" id="meetPageInfo">1 / 1</span>
+                    <button type="button" id="btnMeetPageNext" disabled>Next &gt;</button>
+                  </div>
+                </div>
+              </div>
+              <div id="meetScreenView" class="meet-screenshare-layout hidden">
+                <div class="meet-screen-share-strip" id="meetScreenStrip">
+                </div>
+                <div class="meet-screen-main" id="meetScreenMain">
                 </div>
               </div>
             </div>
@@ -602,6 +673,11 @@
       let localStream = null;
       let screenStream = null;
       let cameraVideoTrack = null;
+
+      const MEET_PAGE_SIZE = 9;
+      let meetCurrentPage = 0;
+      let iAmScreenSharing = false;
+      let incomingScreenSharePeerId = null;
 
       const $ = (id) => document.getElementById(id);
       const gate = $('gate');
@@ -923,6 +999,7 @@
         el.appendChild(lab);
         grid.appendChild(el);
         refreshWatchShareSection();
+        refreshMeetPagination();
         return v;
       }
 
@@ -933,6 +1010,10 @@
           if (vid) vid.srcObject = stream;
         });
         refreshWatchShareSection();
+        refreshMeetPagination();
+        if (incomingScreenSharePeerId) {
+          switchMeetToScreenShareView(incomingScreenSharePeerId);
+        }
       }
 
       function refreshWatchShareSection() {
@@ -949,6 +1030,119 @@
           else if (hasLocal) st.textContent = 'Camera on';
           else st.textContent = 'Friends on video';
         }
+      }
+
+      function refreshMeetPagination() {
+        var grid = $('remoteVideos');
+        if (!grid) return;
+        var tiles = Array.from(grid.querySelectorAll('.remote-tile'));
+        var total = tiles.length;
+        var totalPages = Math.max(1, Math.ceil(total / MEET_PAGE_SIZE));
+        if (meetCurrentPage >= totalPages) meetCurrentPage = totalPages - 1;
+        if (meetCurrentPage < 0) meetCurrentPage = 0;
+        var start = meetCurrentPage * MEET_PAGE_SIZE;
+        tiles.forEach(function (t, i) {
+          t.style.display = (i >= start && i < start + MEET_PAGE_SIZE) ? '' : 'none';
+        });
+        var nav = $('meetPageNav');
+        if (nav) {
+          nav.classList.toggle('hidden', totalPages <= 1);
+          var info = $('meetPageInfo');
+          if (info) info.textContent = (meetCurrentPage + 1) + ' / ' + totalPages;
+          if ($('btnMeetPagePrev')) $('btnMeetPagePrev').disabled = meetCurrentPage === 0;
+          if ($('btnMeetPageNext')) $('btnMeetPageNext').disabled = meetCurrentPage >= totalPages - 1;
+        }
+      }
+
+      function switchMeetToScreenShareView(sharerPeerId) {
+        if (iAmScreenSharing) return;
+        incomingScreenSharePeerId = sharerPeerId;
+        var normal = $('meetNormalView');
+        var screenView = $('meetScreenView');
+        if (!normal || !screenView) return;
+
+        normal.classList.add('hidden');
+        screenView.classList.remove('hidden');
+
+        var strip = $('meetScreenStrip');
+        strip.innerHTML = '';
+        var localV = $('localVideoMeet');
+        if (localV && localStream) {
+          var lWrap = document.createElement('div');
+          lWrap.className = 'local-tile-small';
+          lWrap.style.position = 'relative';
+          var lVid = document.createElement('video');
+          lVid.autoplay = true;
+          lVid.muted = true;
+          lVid.playsInline = true;
+          lVid.srcObject = localStream;
+          lVid.style.width = '100%';
+          lVid.style.height = '100%';
+          lVid.style.objectFit = 'contain';
+          lVid.style.borderRadius = '8px';
+          lVid.style.background = '#000';
+          var lLabel = document.createElement('div');
+          lLabel.className = 'remote-label';
+          lLabel.textContent = 'You';
+          lWrap.appendChild(lVid);
+          lWrap.appendChild(lLabel);
+          strip.appendChild(lWrap);
+        }
+
+        var meetGrid = $('remoteVideos');
+        if (meetGrid) {
+          var remoteTiles = meetGrid.querySelectorAll('.remote-tile');
+          remoteTiles.forEach(function (tile) {
+            var peerId = (tile.id || '').replace('remote-wrap-meet-', '');
+            if (peerId === sharerPeerId) return;
+            var clone = tile.cloneNode(false);
+            clone.className = 'remote-tile';
+            clone.style.display = '';
+            var origVid = tile.querySelector('video');
+            var newVid = document.createElement('video');
+            newVid.autoplay = true;
+            newVid.playsInline = true;
+            if (origVid && origVid.srcObject) newVid.srcObject = origVid.srcObject;
+            newVid.style.width = '100%';
+            newVid.style.height = '100%';
+            newVid.style.objectFit = 'contain';
+            var lab = tile.querySelector('.remote-label');
+            clone.appendChild(newVid);
+            if (lab) clone.appendChild(lab.cloneNode(true));
+            strip.appendChild(clone);
+          });
+        }
+
+        var screenMain = $('meetScreenMain');
+        screenMain.innerHTML = '';
+        var sharerTile = document.getElementById('remote-wrap-meet-' + sharerPeerId);
+        if (sharerTile) {
+          var sVid = sharerTile.querySelector('video');
+          if (sVid && sVid.srcObject) {
+            var mainVid = document.createElement('video');
+            mainVid.autoplay = true;
+            mainVid.playsInline = true;
+            mainVid.srcObject = sVid.srcObject;
+            mainVid.style.width = '100%';
+            mainVid.style.height = '100%';
+            mainVid.style.objectFit = 'contain';
+            screenMain.appendChild(mainVid);
+          }
+        }
+      }
+
+      function switchMeetToNormalView() {
+        incomingScreenSharePeerId = null;
+        var normal = $('meetNormalView');
+        var screenView = $('meetScreenView');
+        if (!normal || !screenView) return;
+        screenView.classList.add('hidden');
+        normal.classList.remove('hidden');
+        var strip = $('meetScreenStrip');
+        if (strip) strip.innerHTML = '';
+        var screenMain = $('meetScreenMain');
+        if (screenMain) screenMain.innerHTML = '';
+        refreshMeetPagination();
       }
 
       function syncLocalPreviews() {
@@ -974,7 +1168,11 @@
           var wrap = document.getElementById('remote-wrap-' + pane + '-' + peerId);
           if (wrap) wrap.remove();
         });
+        if (incomingScreenSharePeerId === peerId) {
+          switchMeetToNormalView();
+        }
         refreshWatchShareSection();
+        refreshMeetPagination();
       }
 
       function teardownWebRtc() {
@@ -1008,6 +1206,8 @@
         if ($('btnStopShare')) $('btnStopShare').disabled = true;
         if ($('webrtcStatus')) $('webrtcStatus').textContent = 'Camera off';
         if ($('watchcamStatus')) $('watchcamStatus').textContent = 'Camera off';
+        iAmScreenSharing = false;
+        switchMeetToNormalView();
         refreshWatchShareSection();
       }
 
@@ -1109,6 +1309,16 @@
           case 'ice':
             handleRemoteIce(msg);
             break;
+          case 'screen-share-started':
+            if (roomProduct === 'MEET') {
+              switchMeetToScreenShareView(msg.from);
+            }
+            break;
+          case 'screen-share-stopped':
+            if (roomProduct === 'MEET' && incomingScreenSharePeerId === msg.from) {
+              switchMeetToNormalView();
+            }
+            break;
           default:
             break;
         }
@@ -1135,13 +1345,17 @@
           var vs = videoSender(pc);
           if (vs) vs.replaceTrack(screenVideo);
         });
+        iAmScreenSharing = true;
+        sendWebRtc({ type: 'screen-share-started' });
         $('btnShareScreen').disabled = true;
         $('btnStopShare').disabled = false;
-        $('webrtcStatus').textContent = 'Sharing screen';
-        if ($('watchcamStatus')) $('watchcamStatus').textContent = 'Screen share runs in Meet tab; friends still see you here if video is forwarded.';
+        $('webrtcStatus').textContent = 'Sharing screen — others see it in the main area';
+        if ($('watchcamStatus')) $('watchcamStatus').textContent = 'Screen share active in Meet tab.';
       }
 
       function stopScreenShare() {
+        var wasSharing = iAmScreenSharing;
+        iAmScreenSharing = false;
         if (screenStream) {
           screenStream.getTracks().forEach(function (t) { t.stop(); });
           screenStream = null;
@@ -1152,6 +1366,9 @@
             var vs = videoSender(pc);
             if (vs) vs.replaceTrack(cam);
           });
+        }
+        if (wasSharing) {
+          sendWebRtc({ type: 'screen-share-stopped' });
         }
         $('btnShareScreen').disabled = !localStream;
         $('btnStopShare').disabled = true;
@@ -1509,6 +1726,21 @@
 
       $('btnShareScreen').onclick = function () { startScreenShare(); };
       $('btnStopShare').onclick = function () { stopScreenShare(); };
+
+      if ($('btnMeetPagePrev')) {
+        $('btnMeetPagePrev').onclick = function () {
+          if (meetCurrentPage > 0) {
+            meetCurrentPage--;
+            refreshMeetPagination();
+          }
+        };
+      }
+      if ($('btnMeetPageNext')) {
+        $('btnMeetPageNext').onclick = function () {
+          meetCurrentPage++;
+          refreshMeetPagination();
+        };
+      }
 
       window.onYouTubeIframeAPIReady = function () {
         if (roomCode) ensurePlayer();

@@ -25,7 +25,9 @@ public class RoomWebRtcStompController {
 			"left-video",
 			"offer",
 			"answer",
-			"ice"
+			"ice",
+			"screen-share-started",
+			"screen-share-stopped"
 	);
 
 	private final RoomRepository roomRepository;
